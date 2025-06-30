@@ -1,9 +1,8 @@
 use bevy::state::state::States;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default)]
-pub enum SpacetimeState {
+pub enum MainMenuState {
     #[default]
-    Off,
-    Ready,
-    Initialized,
+    Shown,
+    Hidden,
 }

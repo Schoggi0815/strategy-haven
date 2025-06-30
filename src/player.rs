@@ -23,11 +23,15 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<SpacetimeChannel<module_bindings::Player>>();
         app.add_systems(OnEnter(SpacetimeState::Initialized), init_player_channel);
+        app.add_systems(Update, (move_player_system, move_other_player_system));
         app.add_systems(
             Update,
-            (move_player_system, move_other_player_system, check_channels),
+            check_channels.run_if(in_state(SpacetimeState::Initialized)),
         );
-        app.add_systems(FixedUpdate, send_player_position);
+        app.add_systems(
+            FixedUpdate,
+            send_player_position.run_if(in_state(SpacetimeState::Initialized)),
+        );
     }
 }
 

@@ -1,7 +1,7 @@
 use bevy::{
     ecs::{
         resource::Resource,
-        system::{Commands, ResMut},
+        system::{Commands, Res, ResMut},
     },
     log::error,
     state::state::NextState,
@@ -10,11 +10,10 @@ use spacetimedb_sdk::{DbContext, Error, Identity, credentials};
 
 use crate::{
     module_bindings::{DbConnection, ErrorContext},
-    spacetime_db::spacetime_state::SpacetimeState,
+    spacetime_db::{
+        spacetime_connection_details::SpacetimeConnectionDetails, spacetime_state::SpacetimeState,
+    },
 };
-
-const HOST: &str = "http://192.168.12.245:3002";
-const DB_NAME: &str = "test-server";
 
 #[derive(Resource)]
 pub struct ServerConnection(pub DbConnection);
@@ -26,7 +25,11 @@ fn creds_store() -> credentials::File {
 pub fn init_spacetime_server(
     mut commands: Commands,
     mut next_state: ResMut<NextState<SpacetimeState>>,
+    spacetime_connection_details: Res<SpacetimeConnectionDetails>,
 ) {
+    let address = &spacetime_connection_details.server_address;
+    let port = &spacetime_connection_details.server_port;
+
     let connection = DbConnection::builder()
         // Register our `on_connect` callback, which will save our auth token.
         .on_connect(on_connected)
@@ -39,9 +42,9 @@ pub fn init_spacetime_server(
         // so we can re-authenticate as the same `Identity`.
         .with_token(None::<String>)
         // Set the database name we chose when we called `spacetime publish`.
-        .with_module_name(DB_NAME)
+        .with_module_name(&spacetime_connection_details.database_name)
         // Set the URI of the SpacetimeDB host that's running our database.
-        .with_uri(HOST)
+        .with_uri(format!("http://{address}:{port}"))
         // Finalize configuration and connect!
         .build()
         .expect("Failed to connect");

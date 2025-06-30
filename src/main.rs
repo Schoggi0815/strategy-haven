@@ -1,15 +1,27 @@
+pub mod main_menu;
 pub mod module_bindings;
 pub mod player;
 pub mod spacetime_db;
 
 use bevy::prelude::*;
+use bevy_egui::EguiPlugin;
 use player::{Player, PlayerPlugin};
 
-use crate::spacetime_db::spacetime_plugin::SpacetimePlugin;
+use crate::{
+    main_menu::main_menu_plugin::MainMenuPlugin, spacetime_db::spacetime_plugin::SpacetimePlugin,
+};
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins((DefaultPlugins, PlayerPlugin, SpacetimePlugin));
+    app.add_plugins((
+        DefaultPlugins,
+        PlayerPlugin,
+        SpacetimePlugin,
+        MainMenuPlugin,
+        EguiPlugin {
+            enable_multipass_for_primary_context: false,
+        },
+    ));
     app.add_systems(Startup, setup);
     app.run();
 }
