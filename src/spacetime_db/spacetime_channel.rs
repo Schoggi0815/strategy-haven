@@ -18,23 +18,6 @@ impl<TEntity> SpacetimeChannel<TEntity> {
     pub fn try_iter_delete(&self) -> TryIter<'_, TEntity> {
         self.delete_receiver.try_iter()
     }
-
-    // pub fn init_resource<'a, TTableHandle: TableWithPrimaryKey>(
-    //     app: &mut App,
-    //     table_selector: impl Fn(&'a RemoteTables) -> TTableHandle + 'a + Send + Sync,
-    // ) where
-    //     TTableHandle::EventContext: DbContext,
-    //     TTableHandle::Row: Send + Clone,
-    // {
-    //     app.insert_resource(Self::default());
-    //     app.add_systems(
-    //         OnEnter(SpacetimeState::Initialized),
-    //         |connection: Res<ServerConnection>,
-    //          channel: Res<SpacetimeChannel<TTableHandle::Row>>| {
-    //             register_channel_startup_system::<TTableHandle>(connection, channel, table_selector)
-    //         },
-    //     );
-    // }
 }
 
 pub fn register_spacetime_channel<TTable: TableWithPrimaryKey>(

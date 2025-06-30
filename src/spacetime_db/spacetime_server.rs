@@ -6,6 +6,7 @@ use bevy::{
     log::error,
     state::state::NextState,
 };
+use bevy::log::info;
 use spacetimedb_sdk::{DbContext, Error, Identity, credentials};
 
 use crate::{
@@ -19,7 +20,7 @@ use crate::{
 pub struct ServerConnection(pub DbConnection);
 
 fn creds_store() -> credentials::File {
-    credentials::File::new("player-1")
+    credentials::File::new("player")
 }
 
 pub fn init_spacetime_server(
@@ -33,14 +34,14 @@ pub fn init_spacetime_server(
     let connection = DbConnection::builder()
         // Register our `on_connect` callback, which will save our auth token.
         .on_connect(on_connected)
-        // Register our `on_connect_error` callback, which will print a message, then exit the procesfs.
+        // Register our `on_connect_error` callback, which will print a message, then exit the process.
         .on_connect_error(on_connect_error)
         // Our `on_disconnect` callback, which will print a message, then exit the process.
         .on_disconnect(on_disconnected)
         // If the user has previously connected, we'll have saved a token in the `on_connect` callback.
         // In that case, we'll load it and pass it to `with_token`,
         // so we can re-authenticate as the same `Identity`.
-        .with_token(None::<String>)
+        .with_token(creds_store().load().expect("Failed to load credentials store"))
         // Set the database name we chose when we called `spacetime publish`.
         .with_module_name(&spacetime_connection_details.database_name)
         // Set the URI of the SpacetimeDB host that's running our database.
