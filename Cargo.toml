@@ -21,4 +21,4 @@ log = { version = "*", features = [
 spacetimedb-sdk = "1.0"
 hex = "0.4"
 crossbeam = "0.8.4"
-bevy_egui = "0.34.1"
+bevy_egui = "0.35.0"

@@ -1,12 +1,15 @@
 use bevy::{
     app::{App, Plugin},
-    ecs::system::{Res, ResMut},
+    ecs::{
+        error::Result,
+        system::{Res, ResMut},
+    },
     state::{
         app::AppExtStates,
         state::{NextState, State},
     },
 };
-use bevy_egui::{EguiContextPass, EguiContexts, egui};
+use bevy_egui::{EguiContexts, EguiPrimaryContextPass, egui};
 
 use crate::{
     main_menu::main_menu_state::MainMenuState,
@@ -20,7 +23,7 @@ pub struct MainMenuPlugin;
 impl Plugin for MainMenuPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<MainMenuState>()
-            .add_systems(EguiContextPass, render_egui_main_menu);
+            .add_systems(EguiPrimaryContextPass, render_egui_main_menu);
     }
 }
 
@@ -30,12 +33,12 @@ fn render_egui_main_menu(
     mut spacetime_state: ResMut<NextState<SpacetimeState>>,
     mut spacetime_connection_details: ResMut<SpacetimeConnectionDetails>,
     mut contexts: EguiContexts,
-) {
+) -> Result {
     if *main_menu_state.get() != MainMenuState::Shown {
-        return;
+        return Ok(());
     }
 
-    egui::CentralPanel::default().show(contexts.ctx_mut(), |ui| {
+    egui::CentralPanel::default().show(contexts.ctx_mut()?, |ui| {
         ui.vertical_centered(|ui| {
             ui.heading("Strategy Haven");
 
@@ -49,4 +52,6 @@ fn render_egui_main_menu(
             }
         });
     });
+
+    Ok(())
 }

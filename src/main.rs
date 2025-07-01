@@ -18,9 +18,7 @@ fn main() {
         PlayerPlugin,
         SpacetimePlugin,
         MainMenuPlugin,
-        EguiPlugin {
-            enable_multipass_for_primary_context: false,
-        },
+        EguiPlugin::default(),
     ));
     app.add_systems(Startup, setup);
     app.run();
