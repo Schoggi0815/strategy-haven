@@ -6,7 +6,7 @@ use spacetimedb::{
 use crate::name_generator::generate_username;
 
 #[client_visibility_filter]
-pub const USER_FILTER: Filter = Filter::Sql("SELECT * FROM user WHERE user.identity = :sender");
+pub const USER_FILTER: Filter = Filter::Sql("SELECT * FROM user WHERE identity = :sender");
 
 #[table(name = user, public)]
 pub struct User {
