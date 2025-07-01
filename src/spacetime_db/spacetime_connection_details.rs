@@ -10,7 +10,7 @@ pub struct SpacetimeConnectionDetails {
 impl Default for SpacetimeConnectionDetails {
     fn default() -> Self {
         Self {
-            server_address: "192.168.12.245".into(),
+            server_address: "schoggi.net".into(),
             server_port: "3002".into(),
             database_name: "test-server".into(),
         }

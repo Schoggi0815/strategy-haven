@@ -6,7 +6,6 @@ use bevy::{
     log::error,
     state::state::NextState,
 };
-use bevy::log::info;
 use spacetimedb_sdk::{DbContext, Error, Identity, credentials};
 
 use crate::{
@@ -41,7 +40,11 @@ pub fn init_spacetime_server(
         // If the user has previously connected, we'll have saved a token in the `on_connect` callback.
         // In that case, we'll load it and pass it to `with_token`,
         // so we can re-authenticate as the same `Identity`.
-        .with_token(creds_store().load().expect("Failed to load credentials store"))
+        .with_token(
+            creds_store()
+                .load()
+                .expect("Failed to load credentials store"),
+        )
         // Set the database name we chose when we called `spacetime publish`.
         .with_module_name(&spacetime_connection_details.database_name)
         // Set the URI of the SpacetimeDB host that's running our database.
@@ -55,7 +58,7 @@ pub fn init_spacetime_server(
         .on_error(|_ctx, err| {
             error!("{}", err);
         })
-        .subscribe("SELECT * FROM player WHERE online = true");
+        .subscribe("SELECT * FROM player");
 
     connection.run_threaded();
 

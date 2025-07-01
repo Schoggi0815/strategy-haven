@@ -1,4 +1,9 @@
-use spacetimedb::{reducer, table, Identity, ReducerContext, Table};
+use spacetimedb::{
+    client_visibility_filter, reducer, table, Filter, Identity, ReducerContext, Table,
+};
+
+#[client_visibility_filter]
+const PLAYER_FILTER: Filter = Filter::Sql("SELECT * FROM player WHERE player.online = TRUE");
 
 #[table(name = player, public)]
 pub struct Player {
