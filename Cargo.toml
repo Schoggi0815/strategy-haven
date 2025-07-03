@@ -12,7 +12,7 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy = { version = "0.16.1" }
+bevy = { version = "0.16.1", features = ["dynamic_linking"] }
 bevy_dylib = { version = "0.16.1" }
 log = { version = "*", features = [
     "max_level_debug",
@@ -21,4 +21,5 @@ log = { version = "*", features = [
 spacetimedb-sdk = "1.0"
 hex = "0.4"
 crossbeam = "0.8.4"
-bevy_egui = "0.35.0"
+bevy_ui_text_input = "0.5.2"
+bevy-inspector-egui = "0.31.0"

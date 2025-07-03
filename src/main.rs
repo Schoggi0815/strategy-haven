@@ -3,7 +3,8 @@ pub mod module_bindings;
 pub mod spacetime_db;
 
 use bevy::prelude::*;
-use bevy_egui::EguiPlugin;
+use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
+use bevy_ui_text_input::TextInputPlugin;
 
 use crate::{
     main_menu::main_menu_plugin::MainMenuPlugin, spacetime_db::spacetime_plugin::SpacetimePlugin,
@@ -15,7 +16,11 @@ fn main() {
         DefaultPlugins,
         SpacetimePlugin,
         MainMenuPlugin,
-        EguiPlugin::default(),
+        EguiPlugin {
+            enable_multipass_for_primary_context: true,
+        },
+        WorldInspectorPlugin::default(),
+        TextInputPlugin,
     ));
     app.add_systems(Startup, setup);
     app.run();

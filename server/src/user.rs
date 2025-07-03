@@ -1,6 +1,6 @@
 use log::warn;
 use spacetimedb::{
-    client_visibility_filter, reducer, table, Filter, Identity, ReducerContext, Table,
+    Filter, Identity, ReducerContext, Table, client_visibility_filter, reducer, table,
 };
 
 use crate::name_generator::generate_username;

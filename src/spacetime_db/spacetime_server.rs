@@ -3,10 +3,9 @@ use bevy::{
         resource::Resource,
         system::{Commands, Res, ResMut},
     },
-    log::error,
     state::state::NextState,
 };
-use spacetimedb_sdk::{DbContext, Error, Identity, credentials};
+use spacetimedb_sdk::{Error, Identity, credentials};
 
 use crate::{
     module_bindings::{DbConnection, ErrorContext},
@@ -19,7 +18,7 @@ use crate::{
 pub struct ServerConnection(pub DbConnection);
 
 fn creds_store() -> credentials::File {
-    credentials::File::new("player")
+    credentials::File::new("player-2")
 }
 
 pub fn init_spacetime_server(
@@ -52,13 +51,6 @@ pub fn init_spacetime_server(
         // Finalize configuration and connect!
         .build()
         .expect("Failed to connect");
-
-    connection
-        .subscription_builder()
-        .on_error(|_ctx, err| {
-            error!("{}", err);
-        })
-        .subscribe("SELECT * FROM player");
 
     connection.run_threaded();
 
