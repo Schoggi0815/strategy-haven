@@ -18,8 +18,9 @@ log = { version = "*", features = [
     "max_level_debug",
     "release_max_level_warn",
 ] }
-spacetimedb-sdk = "1.0"
+spacetimedb-sdk = "1.2.0"
 hex = "0.4"
 crossbeam = "0.8.4"
 bevy_ui_text_input = "0.5.2"
 bevy-inspector-egui = "0.31.0"
+strategy_haven_derive = { path = "strategy_haven_derive" }

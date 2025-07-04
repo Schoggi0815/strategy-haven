@@ -5586,6 +5586,16 @@ dependencies = [
  "hex",
  "log",
  "spacetimedb-sdk",
+ "strategy_haven_derive",
+]
+
+[[package]]
+name = "strategy_haven_derive"
+version = "0.1.0"
+dependencies = [
+ "darling",
+ "quote",
+ "syn 2.0.104",
 ]
 
 [[package]]

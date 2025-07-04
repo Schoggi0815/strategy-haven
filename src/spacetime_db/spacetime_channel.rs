@@ -1,74 +1,14 @@
-use std::sync::Arc;
-
-use bevy::{app::PluginGroupBuilder, prelude::*};
+use bevy::prelude::*;
 use crossbeam::channel::{Receiver, Sender, TryIter, unbounded};
 use spacetimedb_sdk::{Table, TableWithPrimaryKey};
 
-use crate::{
-    module_bindings::RemoteTables,
-    spacetime_db::{spacetime_server::ServerConnection, spacetime_state::SpacetimeState},
-};
+use crate::spacetime_db::spacetime_server::ServerConnection;
 
-pub struct SpacetimeChannelPlugin<
-    'a: 'b,
-    'b,
-    TTable: Table + TableWithPrimaryKey + 'b,
-    TF: (Fn(&'a RemoteTables) -> TTable) + Send + Sync + 'static,
-> where
-    TTable::Row: Send + Sync + Clone + 'static,
-{
-    table_callback: TF,
+pub trait SpacetimeChannelRegisterer<TEntity: Send + Sync + Clone + 'static> {
+    fn register_channels(channel: Res<SpacetimeChannel<TEntity>>, spacetime: Res<ServerConnection>);
 }
 
-impl<
-    'a: 'b,
-    'b,
-    TTable: Table + TableWithPrimaryKey + 'b,
-    TF: (Fn(&'a RemoteTables) -> TTable) + Send + Sync + 'static,
-> SpacetimeChannelPlugin<'a, 'b, TTable, TF>
-where
-    TTable::Row: Send + Sync + Clone + 'static,
-{
-    pub fn new(table_callback: TF) -> Self {
-        Self { table_callback }
-    }
-}
-
-impl<
-    'a: 'b,
-    'b,
-    TTable: Table + TableWithPrimaryKey + 'b,
-    TF: (Fn(&'a RemoteTables) -> TTable) + Send + Sync + 'static,
-> Plugin for SpacetimeChannelPlugin<'a, 'b, TTable, TF>
-where
-    TTable::Row: Send + Sync + Clone + 'static,
-{
-    fn build(&self, app: &mut App) {
-        let callback = self.table_callback.clone();
-        app.init_resource::<SpacetimeChannel<TTable::Row>>()
-            .add_systems(
-                OnEnter(SpacetimeState::Initialized),
-                move |channel: Res<SpacetimeChannel<TTable::Row>>,
-                      spacetime: Res<ServerConnection>| {
-                    let table = (callback.clone())(&spacetime.0.db);
-                    register_spacetime_channel(channel, &(*callback)(&spacetime.0.db));
-                },
-            )
-            .add_systems(
-                Update,
-                (
-                    write_insert_event::<TTable::Row>,
-                    write_update_event::<TTable::Row>,
-                    write_delete_event::<TTable::Row>,
-                ),
-            )
-            .add_event::<InsertEvent<TTable::Row>>()
-            .add_event::<UpdateEvent<TTable::Row>>()
-            .add_event::<DeleteEvent<TTable::Row>>();
-    }
-}
-
-fn write_insert_event<TEntity: Send + Sync + 'static>(
+pub fn write_insert_event<TEntity: Send + Sync + 'static>(
     mut events: EventWriter<InsertEvent<TEntity>>,
     channel: Res<SpacetimeChannel<TEntity>>,
 ) {
@@ -79,7 +19,7 @@ fn write_insert_event<TEntity: Send + Sync + 'static>(
     );
 }
 
-fn write_update_event<TEntity: Send + Sync + 'static>(
+pub fn write_update_event<TEntity: Send + Sync + 'static>(
     mut events: EventWriter<UpdateEvent<TEntity>>,
     channel: Res<SpacetimeChannel<TEntity>>,
 ) {
@@ -90,7 +30,7 @@ fn write_update_event<TEntity: Send + Sync + 'static>(
     );
 }
 
-fn write_delete_event<TEntity: Send + Sync + 'static>(
+pub fn write_delete_event<TEntity: Send + Sync + 'static>(
     mut events: EventWriter<DeleteEvent<TEntity>>,
     channel: Res<SpacetimeChannel<TEntity>>,
 ) {
@@ -103,12 +43,12 @@ fn write_delete_event<TEntity: Send + Sync + 'static>(
 
 #[derive(Resource, Clone)]
 pub struct SpacetimeChannel<TEntity> {
-    insert_receiver: Receiver<TEntity>,
-    update_receiver: Receiver<TEntity>,
-    delete_receiver: Receiver<TEntity>,
-    insert_sender: Sender<TEntity>,
-    update_sender: Sender<TEntity>,
-    delete_sender: Sender<TEntity>,
+    pub insert_receiver: Receiver<TEntity>,
+    pub update_receiver: Receiver<TEntity>,
+    pub delete_receiver: Receiver<TEntity>,
+    pub insert_sender: Sender<TEntity>,
+    pub update_sender: Sender<TEntity>,
+    pub delete_sender: Sender<TEntity>,
 }
 
 #[derive(Event)]
@@ -140,14 +80,13 @@ impl<TEntity> SpacetimeChannel<TEntity> {
     }
 }
 
-pub fn register_spacetime_channel<TTable: TableWithPrimaryKey>(
+pub fn register_insert_and_delete_channel<TTable: Table>(
     channel: Res<SpacetimeChannel<TTable::Row>>,
     table: &TTable,
 ) where
     TTable::Row: Send + Clone,
 {
     let insert_sender = channel.insert_sender.clone();
-    let update_sender = channel.update_sender.clone();
     let delete_sender = channel.delete_sender.clone();
 
     table.on_insert(move |_ctx, entity| {
@@ -156,14 +95,23 @@ pub fn register_spacetime_channel<TTable: TableWithPrimaryKey>(
             .expect("Unbounded channel should never block!");
     });
 
-    table.on_update(move |_ctx, _old, entity| {
-        update_sender
+    table.on_delete(move |_ctx, entity| {
+        delete_sender
             .try_send(entity.clone())
             .expect("Unbounded channel should never block!");
     });
+}
 
-    table.on_delete(move |_ctx, entity| {
-        delete_sender
+pub fn register_update_channel<TTable: TableWithPrimaryKey>(
+    channel: Res<SpacetimeChannel<TTable::Row>>,
+    table: &TTable,
+) where
+    TTable::Row: Send + Clone,
+{
+    let update_sender = channel.update_sender.clone();
+
+    table.on_update(move |_ctx, _old, entity| {
+        update_sender
             .try_send(entity.clone())
             .expect("Unbounded channel should never block!");
     });

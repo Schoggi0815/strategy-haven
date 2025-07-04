@@ -1,12 +1,12 @@
 use spacetimedb::{
-    client_visibility_filter, reducer, table, Filter, Identity, ReducerContext, Table,
+    Filter, Identity, ReducerContext, Table, client_visibility_filter, reducer, table,
 };
 
 use crate::user::user;
 
 #[client_visibility_filter]
 pub const GUILD_USER_FILTER: Filter =
-    Filter::Sql("SELECT o.* FROM guild_user s JOIN guild_user o ON s.guild_id = o.guild_id WHERE s.user_id = :sender");
+    Filter::Sql("SELECT s.* FROM guild_user s JOIN user u ON s.user_id = u.identity");
 
 #[table(name = guild_user, public)]
 pub struct GuildUser {
@@ -19,12 +19,12 @@ pub struct GuildUser {
 
 #[client_visibility_filter]
 pub const GUILD_FILTER: Filter =
-    Filter::Sql("SELECT guild.* FROM guild JOIN guild_user ON guild.id = guild_user.guild_id WHERE guild_user.user_id = :sender");
+    Filter::Sql("SELECT g.* FROM guild g JOIN guild_user gu ON gu.guild_id = g.id");
 
 #[table(name = guild, public)]
 pub struct Guild {
-    #[primary_key]
     #[auto_inc]
+    #[primary_key]
     id: u64,
     name: String,
 }

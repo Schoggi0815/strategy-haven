@@ -1,14 +1,17 @@
 use bevy::{
     app::{App, Plugin, Update},
+    ecs::system::Res,
     state::{
         app::AppExtStates,
         state::{OnEnter, OnExit},
     },
 };
+use spacetimedb_sdk::Table;
+use strategy_haven_derive::{SpacetimeChannelPlugin, SpacetimeChannelRegisterer};
 
 use crate::{
     main_menu::{
-        guild_selection::{on_enter_guild_selection, on_insert_guild, register_guild_callbacks},
+        guild_selection::{on_enter_guild_selection, on_insert_guild},
         main_menu_state::MainMenuState::{self, *},
         server_selection::{
             delete_server_selection, read_server_selection_button_input, spawn_server_selection,
@@ -16,24 +19,20 @@ use crate::{
         },
         server_selection_loading::wait_for_spacetime,
     },
-    module_bindings::{Guild, RemoteTables, User, UserTableAccess, UserTableHandle},
-    spacetime_db::{spacetime_channel::SpacetimeChannelPlugin, spacetime_state::SpacetimeState},
+    module_bindings::GuildUserTableAccess,
+    spacetime_db::spacetime_channel::{SpacetimeChannel, SpacetimeChannelRegisterer},
 };
 
 pub struct MainMenuPlugin;
 
-fn user_callback(db: &RemoteTables) -> UserTableHandle {
-    db.user()
-}
+#[derive(SpacetimeChannelPlugin, SpacetimeChannelRegisterer)]
+#[entity(entity = "GuildUser", entity_db = "guild_user")]
+pub struct SpacetimeGuildPlugin;
 
 impl Plugin for MainMenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(SpacetimeChannelPlugin::new(|db| db.user()))
+        app.add_plugins(SpacetimeGuildPlugin)
             .init_state::<MainMenuState>()
-            .add_systems(
-                OnEnter(SpacetimeState::Initialized),
-                register_guild_callbacks,
-            )
             .add_systems(OnEnter(ServerSelection), spawn_server_selection)
             .add_systems(OnExit(ServerSelection), delete_server_selection)
             .add_systems(

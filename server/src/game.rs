@@ -1,4 +1,4 @@
-use spacetimedb::{client_visibility_filter, reducer, table, Filter, ReducerContext, Table};
+use spacetimedb::{Filter, ReducerContext, Table, client_visibility_filter, reducer, table};
 
 use crate::guild::is_self_manager;
 
@@ -9,9 +9,6 @@ pub const GAME_FILTER: Filter = Filter::Sql(
     FROM game
     JOIN guild
     ON game.guild_id = guild.id
-    JOIN guild_user
-    ON guild_user.guild_id = guild.id
-    WHERE guild_user.user_id = :sender
     ",
 );
 

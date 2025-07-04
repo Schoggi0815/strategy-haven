@@ -47,7 +47,8 @@ pub fn init_spacetime_server(
         // Set the database name we chose when we called `spacetime publish`.
         .with_module_name(&spacetime_connection_details.database_name)
         // Set the URI of the SpacetimeDB host that's running our database.
-        .with_uri(format!("http://{address}:{port}"))
+        // .with_uri(format!("http://{address}:{port}"))
+        .with_uri("https://maincloud.spacetimedb.com")
         // Finalize configuration and connect!
         .build()
         .expect("Failed to connect");

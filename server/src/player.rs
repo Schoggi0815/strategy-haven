@@ -1,5 +1,5 @@
 use spacetimedb::{
-    client_visibility_filter, reducer, table, Filter, Identity, ReducerContext, Table,
+    Filter, Identity, ReducerContext, Table, client_visibility_filter, reducer, table,
 };
 
 use crate::{
@@ -14,11 +14,6 @@ pub const PLAYER_FILTER: Filter = Filter::Sql(
     FROM player
     JOIN game
     ON player.game_id = game.id
-    JOIN guild
-    ON game.guild_id = guild.id
-    JOIN guild_user
-    ON guild_user.guild_id = guild.id
-    WHERE guild_user.user_id = :sender
     ",
 );
 
