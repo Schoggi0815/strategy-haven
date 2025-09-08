@@ -5,8 +5,5 @@ pub enum MainMenuState {
     #[default]
     ServerSelection,
     ServerSelectionLoading,
-    GuildSelection,
-    UserRename,
-    MatchSelection,
-    MatchEdit,
+    Hidden,
 }

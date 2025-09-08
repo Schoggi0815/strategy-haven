@@ -1,31 +1,39 @@
 pub mod main_menu;
-pub mod module_bindings;
-pub mod spacetime_db;
+pub mod r#match;
 
 use bevy::prelude::*;
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
+use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use bevy_ui_text_input::TextInputPlugin;
 
 use crate::{
-    main_menu::main_menu_plugin::MainMenuPlugin, spacetime_db::spacetime_plugin::SpacetimePlugin,
+    main_menu::{main_menu_plugin::MainMenuPlugin, main_menu_state::MainMenuState},
+    r#match::{match_plugin::MatchPlugin, match_state::MatchState},
 };
 
 fn main() {
-    let mut app = App::new();
-    app.add_plugins((
-        DefaultPlugins,
-        SpacetimePlugin,
-        MainMenuPlugin,
-        EguiPlugin {
-            enable_multipass_for_primary_context: true,
-        },
-        WorldInspectorPlugin::default(),
-        TextInputPlugin,
-    ));
-    app.add_systems(Startup, setup);
-    app.run();
+    App::new()
+        .add_plugins((
+            DefaultPlugins,
+            MainMenuPlugin,
+            MatchPlugin,
+            EguiPlugin::default(),
+            WorldInspectorPlugin::default(),
+            PanOrbitCameraPlugin,
+            TextInputPlugin,
+        ))
+        .add_systems(Startup, setup)
+        .add_systems(OnEnter(MainMenuState::Hidden), start_match)
+        .run();
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2d);
+    commands.spawn((
+        Transform::from_translation(Vec3::new(0.0, 1.5, 5.0)),
+        PanOrbitCamera::default(),
+    ));
+}
+
+fn start_match(mut match_state: ResMut<NextState<MatchState>>) {
+    match_state.set(MatchState::Setup);
 }

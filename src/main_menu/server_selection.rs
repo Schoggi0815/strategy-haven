@@ -1,30 +1,22 @@
 use bevy::prelude::*;
 use bevy_ui_text_input::{TextInputContents, TextInputMode, TextInputNode, TextInputPrompt};
 
-use crate::{
-    main_menu::main_menu_state::MainMenuState,
-    spacetime_db::{
-        spacetime_connection_details::{
-            DEFAULT_DATABASE_NAME, DEFAULT_PORT, DEFAULT_SERVER, SpacetimeConnectionDetails,
-        },
-        spacetime_state::SpacetimeState,
-    },
-};
+use crate::main_menu::main_menu_state::MainMenuState;
 
 #[derive(Component)]
 pub struct ServerSelectionMenu;
 
 #[derive(Component)]
-pub struct ServerSelectionPlayButton;
+pub struct ServerSelectionPlayOnlineButton;
+
+#[derive(Component)]
+pub struct ServerSelectionPlayOfflineButton;
 
 #[derive(Component)]
 pub struct ServerAdressInput;
 
 #[derive(Component)]
 pub struct ServerPortInput;
-
-#[derive(Component)]
-pub struct ServerDatabaseInput;
 
 pub fn spawn_server_selection(mut commands: Commands, assets: Res<AssetServer>) {
     let font = assets.load("fonts/Roboto-VariableFont_wdth,wght.ttf");
@@ -41,7 +33,32 @@ pub fn spawn_server_selection(mut commands: Commands, assets: Res<AssetServer>) 
         ServerSelectionMenu,
         children![
             (
-                ServerSelectionPlayButton,
+                ServerSelectionPlayOfflineButton,
+                Button,
+                Node {
+                    width: Val::Px(200.0),
+                    height: Val::Px(65.0),
+                    border: UiRect::all(Val::Px(5.0)),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                BorderColor(Color::BLACK),
+                BorderRadius::MAX,
+                BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
+                children![(
+                    Text::new("Play Offline"),
+                    TextFont {
+                        font: font.clone(),
+                        font_size: 33.0,
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                    TextShadow::default(),
+                )]
+            ),
+            (
+                ServerSelectionPlayOnlineButton,
                 Button,
                 Node {
                     width: Val::Px(200.0),
@@ -96,22 +113,6 @@ pub fn spawn_server_selection(mut commands: Commands, assets: Res<AssetServer>) 
                     ServerPortInput,
                     get_text_input(font.clone(), "Port. (Leave empty for default)".into())
                 )]
-            ),
-            (
-                Node {
-                    width: Val::Px(400.0),
-                    height: Val::Px(45.0),
-                    border: UiRect::all(Val::Px(5.0)),
-                    padding: UiRect::all(Val::Px(5.0)),
-                    ..default()
-                },
-                BorderColor(Color::BLACK),
-                BorderRadius::new(Val::Px(5.), Val::Px(5.), Val::Px(5.), Val::Px(5.)),
-                BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
-                children![(
-                    ServerDatabaseInput,
-                    get_text_input(font.clone(), "Database. (Leave empty for default)".into())
-                )]
             )
         ],
     ));
@@ -152,59 +153,26 @@ pub fn delete_server_selection(
     }
 }
 
-pub fn update_server_info(
-    server_address_query: Query<
-        &TextInputContents,
-        (With<ServerAdressInput>, Changed<TextInputContents>),
+pub fn play_offline(
+    play_button: Single<
+        &Interaction,
+        (Changed<Interaction>, With<ServerSelectionPlayOfflineButton>),
     >,
-    server_port_query: Query<
-        &TextInputContents,
-        (With<ServerPortInput>, Changed<TextInputContents>),
-    >,
-    server_database_query: Query<
-        &TextInputContents,
-        (With<ServerDatabaseInput>, Changed<TextInputContents>),
-    >,
-    mut spacetime_connection_details: ResMut<SpacetimeConnectionDetails>,
+    mut main_menu_state: ResMut<NextState<MainMenuState>>,
 ) {
-    let server_address = server_address_query.single();
-    if let Ok(server_address) = server_address {
-        let server_address = server_address.get().into();
-        let server_address = if server_address == "" {
-            DEFAULT_SERVER.into()
-        } else {
-            server_address
-        };
-        spacetime_connection_details.server_address = server_address;
+    if *play_button.into_inner() != Interaction::Pressed {
+        return;
     }
 
-    let server_port = server_port_query.single();
-    if let Ok(server_port) = server_port {
-        let server_port = server_port.get().into();
-        let server_port = if server_port == "" {
-            DEFAULT_PORT.into()
-        } else {
-            server_port
-        };
-        spacetime_connection_details.server_port = server_port;
-    }
-
-    let server_database = server_database_query.single();
-    if let Ok(server_database) = server_database {
-        let server_database = server_database.get().into();
-        let server_database = if server_database == "" {
-            DEFAULT_DATABASE_NAME.into()
-        } else {
-            server_database
-        };
-        spacetime_connection_details.database_name = server_database;
-    }
+    main_menu_state.set(MainMenuState::Hidden);
 }
 
 pub fn read_server_selection_button_input(
-    interaction_query: Query<&Interaction, (Changed<Interaction>, With<ServerSelectionPlayButton>)>,
+    interaction_query: Query<
+        &Interaction,
+        (Changed<Interaction>, With<ServerSelectionPlayOnlineButton>),
+    >,
     mut main_menu_state: ResMut<NextState<MainMenuState>>,
-    mut spacetime_state: ResMut<NextState<SpacetimeState>>,
 ) {
     let Ok(interaction) = interaction_query.single() else {
         return;
@@ -214,6 +182,5 @@ pub fn read_server_selection_button_input(
         return;
     }
 
-    spacetime_state.set(SpacetimeState::Ready);
     main_menu_state.set(MainMenuState::ServerSelectionLoading);
 }
