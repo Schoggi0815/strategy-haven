@@ -11,16 +11,16 @@ impl WorldTilePosition {
         Self { x, y }
     }
 
-    pub fn neighbours(&self) -> [WorldTilePosition; 8] {
+    pub fn neighbours(&self) -> [WorldTilePosition; 4] {
         [
             WorldTilePosition::new(self.x + 1, self.y),
             WorldTilePosition::new(self.x - 1, self.y),
             WorldTilePosition::new(self.x, self.y + 1),
             WorldTilePosition::new(self.x, self.y - 1),
-            WorldTilePosition::new(self.x + 1, self.y + 1),
-            WorldTilePosition::new(self.x - 1, self.y + 1),
-            WorldTilePosition::new(self.x + 1, self.y - 1),
-            WorldTilePosition::new(self.x - 1, self.y - 1),
+            // WorldTilePosition::new(self.x + 1, self.y + 1),
+            // WorldTilePosition::new(self.x - 1, self.y + 1),
+            // WorldTilePosition::new(self.x + 1, self.y - 1),
+            // WorldTilePosition::new(self.x - 1, self.y - 1),
         ]
     }
 }

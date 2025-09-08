@@ -6,6 +6,7 @@ pub enum WorldState {
     None,
     SpawningTiles,
     GeneratingTerrain,
+    CleanupTerrain,
     ReplaceTiles,
     PlacingPlayers,
     Ready,

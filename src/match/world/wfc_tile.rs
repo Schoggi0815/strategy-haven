@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
-use crate::r#match::world::world_tile_type_flags::WorldTileTypeFlags;
+use crate::r#match::world::{
+    world_tile_chances::WorldTileChances, world_tile_type_flags::WorldTileTypeFlags,
+};
 
 #[derive(Component, Clone)]
 pub struct WfcTile {
@@ -40,7 +42,8 @@ impl WfcTile {
         }
     }
 
-    pub fn collapse(&mut self) {
-        self.possible_types = self.possible_types.get_random();
+    pub fn collapse(&mut self, chances: &mut WorldTileChances) {
+        self.possible_types = self.possible_types.get_random(chances);
+        chances.reduce_matching(self.possible_types);
     }
 }
