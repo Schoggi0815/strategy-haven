@@ -4,34 +4,26 @@ use crate::r#match::world::{
     world_tile_chances::WorldTileChances, world_tile_type_flags::WorldTileTypeFlags,
 };
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, PartialEq, Eq)]
 pub struct WfcTile {
     pub possible_types: WorldTileTypeFlags,
 }
 
-impl PartialEq for WfcTile {
-    fn eq(&self, other: &Self) -> bool {
-        self.possible_types.bits() == other.possible_types.bits()
-    }
-}
-
-impl Eq for WfcTile {}
-
 impl PartialOrd for WfcTile {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.possible_types
-            .iter()
-            .count()
-            .partial_cmp(&other.possible_types.iter().count())
+            .bits()
+            .count_ones()
+            .partial_cmp(&other.possible_types.bits().count_ones())
     }
 }
 
 impl Ord for WfcTile {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.possible_types
-            .iter()
-            .count()
-            .cmp(&other.possible_types.iter().count())
+            .bits()
+            .count_ones()
+            .cmp(&other.possible_types.bits().count_ones())
     }
 }
 
