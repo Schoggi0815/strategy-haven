@@ -6,7 +6,7 @@ use crate::r#match::world::{
     world_tile_type_flags::WorldTileTypeFlags,
 };
 
-const COLLAPSES_PER_FRAME: usize = 2;
+const COLLAPSES_PER_FRAME: usize = 16;
 
 pub struct WorldPlugin;
 
@@ -25,8 +25,8 @@ impl Plugin for WorldPlugin {
 }
 
 fn spawn_tiles(mut commands: Commands, mut world_state: ResMut<NextState<WorldState>>) {
-    for x in 0..256 {
-        for y in 0..256 {
+    for x in 0..128 {
+        for y in 0..128 {
             let position = WorldTilePosition::new(x, y);
 
             commands.spawn((
@@ -41,7 +41,7 @@ fn spawn_tiles(mut commands: Commands, mut world_state: ResMut<NextState<WorldSt
 }
 
 fn wfc_collapse(
-    wfc_tiles: Query<(&mut WfcTile, &WorldTilePosition, Entity)>,
+    mut wfc_tiles: Query<(&mut WfcTile, &WorldTilePosition, Entity)>,
     mut world_state: ResMut<NextState<WorldState>>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -50,16 +50,15 @@ fn wfc_collapse(
 ) {
     let mesh = meshes.add(Cuboid::from_size(Vec3::ONE));
 
-    let mut tiles = wfc_tiles.into_iter().collect::<Vec<_>>();
-
     for _ in 0..COLLAPSES_PER_FRAME {
         if collapse_first(
-            &mut tiles,
+            &mut wfc_tiles,
             &mut commands,
             mesh.clone(),
             &mut materials,
             &mut global_chances,
         ) {
+            info!("DONE");
             world_state.set(WorldState::CleanupTerrain);
             return;
         }
@@ -67,14 +66,15 @@ fn wfc_collapse(
 }
 
 fn collapse_first(
-    tiles: &mut Vec<(Mut<WfcTile>, &WorldTilePosition, Entity)>,
+    tiles: &mut Query<(&mut WfcTile, &WorldTilePosition, Entity)>,
     commands: &mut Commands,
     mesh: Handle<Mesh>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     global_chances: &mut ResMut<GlobalChancesResource>,
 ) -> bool {
-    let Some((tile, position, entity)) = tiles
+    let Some((mut tile, position, entity)) = tiles
         .iter_mut()
+        .sort::<&WfcTile>()
         .filter(|(tile, ..)| tile.possible_types.bits().count_ones() > 1)
         .nth(0)
     else {
@@ -84,38 +84,39 @@ fn collapse_first(
     tile.collapse(&mut global_chances.0);
     let color = tile.possible_types.get_tile_type().get_color();
 
-    commands.entity(*entity).insert((
+    commands.entity(entity).insert((
         Mesh3d(mesh.clone()),
         MeshMaterial3d(materials.add(StandardMaterial::from_color(color))),
     ));
 
-    propagate_neighbours(
-        &position,
-        tile.possible_types.get_allowed(),
-        tiles,
-        commands,
-        mesh.clone(),
-        materials,
-    );
+    let position = position.clone();
+    let allowed = tile.possible_types.get_allowed();
+
+    propagate_neighbours(&position, allowed, tiles, commands, mesh.clone(), materials);
 
     false
 }
 
 fn propagate_neighbours(
     position: &WorldTilePosition,
-    allowed_flags: WorldTileTypeFlags,
-    tiles: &mut Vec<(Mut<WfcTile>, &WorldTilePosition, Entity)>,
+    mut allowed_flags: WorldTileTypeFlags,
+    tiles: &mut Query<(&mut WfcTile, &WorldTilePosition, Entity)>,
     commands: &mut Commands,
     mesh: Handle<Mesh>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
 ) {
+    if allowed_flags == WorldTileTypeFlags::empty() {
+        warn!("Impossible state at {:?}", position);
+        allowed_flags = WorldTileTypeFlags::Field;
+    }
+
     let neighbours = position.neighbours();
 
     let mut updated_neighbours = Vec::new();
 
-    for (neighbour, neighbour_position, entity) in
-        tiles.iter_mut().filter(|(_, p, _)| neighbours.contains(p))
-    {
+    for (mut neighbour, neighbour_position, entity) in tiles.iter_mut().filter(|(tile, p, _)| {
+        tile.possible_types.bits().count_ones() > 1 && neighbours.contains(p)
+    }) {
         let new_value = neighbour.possible_types & allowed_flags;
 
         if neighbour.possible_types != new_value {
@@ -125,9 +126,9 @@ fn propagate_neighbours(
                 neighbour.possible_types.get_allowed(),
             ));
 
-            if new_value.iter().count() == 1 {
+            if new_value.bits().count_ones() == 1 {
                 let color = new_value.get_tile_type().get_color();
-                commands.entity(*entity).insert((
+                commands.entity(entity).insert((
                     Mesh3d(mesh.clone()),
                     MeshMaterial3d(materials.add(StandardMaterial::from_color(color))),
                 ));
