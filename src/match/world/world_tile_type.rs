@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
-#[derive(Component, Debug)]
+pub const LAST_TILE_TYPE: WorldTileType = WorldTileType::Beach;
+
+#[derive(Component, Debug, Clone, Copy)]
 pub enum WorldTileType {
     Water,
     Field,
