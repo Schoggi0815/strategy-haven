@@ -17,9 +17,9 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> TileGrid<X_SIZE, Y_SIZE> {
         (1..X_SIZE - 1)
             .cartesian_product(1..Y_SIZE - 1)
             .flat_map(|(x, y)| {
-                let slice_1 = self.data[x - 1][y - 1..y + 1];
-                let slice_2 = self.data[x][y - 1..y + 1];
-                let slice_3 = self.data[x + 1][y - 1..y + 1];
+                let slice_1 = &self.data[x - 1][y - 1..y + 1];
+                let slice_2 = &self.data[x][y - 1..y + 1];
+                let slice_3 = &self.data[x + 1][y - 1..y + 1];
 
                 let pattern = WfcPattern::new_from_slices(&slice_1, &slice_2, &slice_3);
                 let pattern_rot1 = pattern.rotation();

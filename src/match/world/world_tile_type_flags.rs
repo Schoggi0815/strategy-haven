@@ -71,3 +71,15 @@ impl WorldTileTypeFlags {
             .fold(WorldTileTypeFlags::empty(), |acc, x| acc | x)
     }
 }
+
+impl From<WorldTileType> for WorldTileTypeFlags {
+    fn from(value: WorldTileType) -> Self {
+        match value {
+            WorldTileType::Water => Self::Water,
+            WorldTileType::Field => Self::Field,
+            WorldTileType::Forest => Self::Forest,
+            WorldTileType::Mountain => Self::Mountain,
+            WorldTileType::Beach => Self::Beach,
+        }
+    }
+}
