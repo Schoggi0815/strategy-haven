@@ -1,7 +1,11 @@
+use std::fmt::Display;
+
+use colored::Colorize;
 use itertools::Itertools;
 
-use crate::r#match::world::{wfc::wfc_pattern::WfcPattern, world_tile_type::WorldTileType};
+use crate::r#match::world::{wfc::pattern_data::PatternData, world_tile_type::WorldTileType};
 
+#[derive(Debug)]
 pub struct TileGrid<const X_SIZE: usize, const Y_SIZE: usize> {
     pub data: [[WorldTileType; Y_SIZE]; X_SIZE],
 }
@@ -13,20 +17,82 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> TileGrid<X_SIZE, Y_SIZE> {
         }
     }
 
-    pub fn get_patterns(&self) -> Vec<WfcPattern> {
-        (1..X_SIZE - 1)
-            .cartesian_product(1..Y_SIZE - 1)
-            .flat_map(|(x, y)| {
-                let slice_1 = &self.data[x - 1][y - 1..y + 1];
-                let slice_2 = &self.data[x][y - 1..y + 1];
-                let slice_3 = &self.data[x + 1][y - 1..y + 1];
+    pub fn set(&mut self, x: usize, y: usize, tile_type: WorldTileType) {
+        self.data[x][y] = tile_type;
+    }
 
-                let pattern = WfcPattern::new_from_slices(&slice_1, &slice_2, &slice_3);
+    pub fn get_patterns<const P_SIZE_X: usize, const P_SIZE_Y: usize>(
+        &self,
+    ) -> (
+        Vec<PatternData<P_SIZE_X, P_SIZE_Y>>,
+        Vec<PatternData<P_SIZE_Y, P_SIZE_X>>,
+    ) {
+        let (all, all_rotated): (Vec<_>, Vec<_>) = (0..X_SIZE - P_SIZE_X)
+            .cartesian_product(0..Y_SIZE - P_SIZE_Y)
+            .map(|(x, y)| {
+                let mut pattern_array = [[WorldTileType::Water; P_SIZE_Y]; P_SIZE_X];
+
+                for (pattern_x, pattern_y) in (0..P_SIZE_X).cartesian_product(0..P_SIZE_Y) {
+                    pattern_array[pattern_x][pattern_y] = self.data[x + pattern_x][y + pattern_y];
+                }
+
+                let pattern = PatternData::new(pattern_array);
                 let pattern_rot1 = pattern.rotation();
                 let pattern_rot2 = pattern_rot1.rotation();
                 let pattern_rot3 = pattern_rot2.rotation();
-                [pattern, pattern_rot1, pattern_rot2, pattern_rot3]
+                ([pattern, pattern_rot2], [pattern_rot1, pattern_rot3])
             })
-            .collect::<Vec<_>>()
+            .unzip();
+
+        let mut all = all.into_flattened();
+        all.sort();
+        all.dedup();
+        let mut all_rotated = all_rotated.into_flattened();
+        all_rotated.sort();
+        all_rotated.dedup();
+
+        (all, all_rotated)
+    }
+
+    pub fn get_patterns_square<const P_SIZE: usize>(&self) -> Vec<PatternData<P_SIZE, P_SIZE>> {
+        (0..X_SIZE - P_SIZE)
+            .cartesian_product(0..Y_SIZE - P_SIZE)
+            .flat_map(|(x, y)| {
+                let mut pattern_array = [[WorldTileType::Water; P_SIZE]; P_SIZE];
+
+                for (pattern_x, pattern_y) in (0..P_SIZE).cartesian_product(0..P_SIZE) {
+                    pattern_array[pattern_x][pattern_y] = self.data[x + pattern_x][y + pattern_y];
+                }
+
+                let pattern = PatternData::new(pattern_array);
+                let pattern_rot1 = pattern.rotation();
+                let pattern_rot2 = pattern_rot1.rotation();
+                let pattern_rot3 = pattern_rot2.rotation();
+                [pattern, pattern_rot2, pattern_rot1, pattern_rot3]
+            })
+            .sorted()
+            .dedup()
+            .collect_vec()
+    }
+}
+
+impl<const X_SIZE: usize, const Y_SIZE: usize> Display for TileGrid<X_SIZE, Y_SIZE> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for x in 0..X_SIZE {
+            for y in 0..Y_SIZE {
+                let tile = self.data[x][y];
+
+                let color = tile.get_color().to_linear();
+                let colored = format!("{:?}", tile).truecolor(
+                    (color.red * 255.) as u8,
+                    (color.green * 255.) as u8,
+                    (color.blue * 255.) as u8,
+                );
+                write!(f, "{} ", colored)?;
+            }
+            write!(f, "\n")?;
+        }
+
+        Ok(())
     }
 }

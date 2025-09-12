@@ -3,7 +3,7 @@ use bitflags::bitflags;
 use crate::r#match::world::{world_tile_chances::WorldTileChances, world_tile_type::WorldTileType};
 
 bitflags! {
-    #[derive(PartialEq, Eq, Clone, Copy)]
+    #[derive(PartialEq, Eq, Clone, Copy, Debug)]
     pub struct WorldTileTypeFlags: u8 {
         const Water = 1 << 2;
         const Field = 1 << 3;
@@ -21,7 +21,13 @@ impl WorldTileTypeFlags {
             WorldTileTypeFlags::Mountain => WorldTileType::Mountain,
             WorldTileTypeFlags::Forest => WorldTileType::Forest,
             WorldTileTypeFlags::Beach => WorldTileType::Beach,
-            _ => WorldTileType::Water,
+            flags => {
+                if flags == WorldTileTypeFlags::empty() {
+                    WorldTileType::Forest
+                } else {
+                    WorldTileType::Field
+                }
+            }
         }
     }
 
