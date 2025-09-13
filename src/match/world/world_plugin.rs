@@ -1,10 +1,14 @@
 use bevy::prelude::*;
-
+use itertools::Itertools;
 use crate::r#match::world::{
     global_chances_resource::GlobalChancesResource, wfc_tile::WfcTile, world_state::WorldState,
     world_tile_position::WorldTilePosition, world_tile_type::WorldTileType,
     world_tile_type_flags::WorldTileTypeFlags,
 };
+use crate::r#match::world::wfc::pattern::Pattern;
+use crate::r#match::world::wfc::pattern_palette::PatternPalette;
+use crate::r#match::world::wfc::super_grid::SuperGrid;
+use crate::r#match::world::wfc::tile_grid::TileGrid;
 
 const COLLAPSES_PER_FRAME: usize = 16;
 
@@ -24,14 +28,50 @@ impl Plugin for WorldPlugin {
     }
 }
 
-fn spawn_tiles(mut commands: Commands, mut world_state: ResMut<NextState<WorldState>>) {
-    for x in 0..128 {
-        for y in 0..128 {
-            let position = WorldTilePosition::new(x, y);
+fn spawn_tiles(mut commands: Commands, mut world_state: ResMut<NextState<WorldState>>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>,) {
+    let mut reference = TileGrid::<9, 9>::new_filled(WorldTileType::Water);
+    for (x, y) in (2..9).cartesian_product(2..9) {
+        reference.set(x, y, WorldTileType::Beach);
+    }
+    for (x, y) in (3..9).cartesian_product(3..9) {
+        reference.set(x, y, WorldTileType::Field);
+    }
+    for (x, y) in (6..9).cartesian_product(5..9) {
+        reference.set(x, y, WorldTileType::Forest);
+    }
+    for (x, y) in (7..8).cartesian_product(0..3) {
+        reference.set(x, y, WorldTileType::Beach);
+    }
+    for (x, y) in (8..9).cartesian_product(0..4) {
+        reference.set(x, y, WorldTileType::Field);
+    }
+    for (x, y) in (5..6).cartesian_product(7..9) {
+        reference.set(x, y, WorldTileType::Forest);
+    }
+    println!("{}", reference);
+    let patterns = reference.get_patterns_square::<3>();
+    patterns.iter().enumerate().for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid()));
+    let pattern_palette = PatternPalette::new(
+        patterns
+            .into_iter()
+            .map(|pattern| -> Box<dyn Pattern> { Box::new(pattern) })
+            .collect(),
+    );
+    let mut super_grid = SuperGrid::<50, 50>::new_empty(pattern_palette);
+    super_grid.set(3, 3, WorldTileTypeFlags::Water);
+    super_grid.collapse_grid();
+    let new_grid = super_grid.to_tile_grid();
+
+    let mesh = meshes.add(Cuboid::from_size(Vec3::ONE));
+
+    for x in 0..50 {
+        for y in 0..50 {
+            // let position = WorldTilePosition::new(x, y);
+            let tile_type = new_grid.get(x, y);
 
             commands.spawn((
-                position,
-                WfcTile::new(),
+                Mesh3d(mesh.clone()),
+                MeshMaterial3d(materials.add(StandardMaterial::from_color(tile_type.get_color()))),
                 Transform::from_xyz(x as f32, 0., y as f32),
             ));
         }

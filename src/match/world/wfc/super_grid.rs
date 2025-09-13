@@ -71,12 +71,12 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> SuperGrid<X_SIZE, Y_SIZE> {
     }
 
     pub fn collapse_grid(&mut self) {
-        let mut step_count = 0;
+        // let mut step_count = 0;
 
         loop {
             // println!("Step {}:", step_count);
             // println!("{}", self.to_tile_grid());
-            step_count += 1;
+            // step_count += 1;
 
             // thread::sleep(Duration::from_secs(1));
 

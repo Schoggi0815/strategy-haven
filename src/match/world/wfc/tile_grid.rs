@@ -21,6 +21,10 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> TileGrid<X_SIZE, Y_SIZE> {
         self.data[x][y] = tile_type;
     }
 
+    pub fn get(&self, x: usize, y: usize) -> WorldTileType {
+        self.data[x][y]
+    }
+
     pub fn get_patterns<const P_SIZE_X: usize, const P_SIZE_Y: usize>(
         &self,
     ) -> (
@@ -78,8 +82,8 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> TileGrid<X_SIZE, Y_SIZE> {
 
 impl<const X_SIZE: usize, const Y_SIZE: usize> Display for TileGrid<X_SIZE, Y_SIZE> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for x in 0..X_SIZE {
-            for y in 0..Y_SIZE {
+        for y in 0..Y_SIZE {
+            for x in 0..X_SIZE {
                 let tile = self.data[x][y];
 
                 let color = tile.get_color().to_linear();

@@ -25,7 +25,7 @@ impl WorldTileTypeFlags {
                 if flags == WorldTileTypeFlags::empty() {
                     WorldTileType::Forest
                 } else {
-                    WorldTileType::Field
+                    WorldTileType::Mountain
                 }
             }
         }

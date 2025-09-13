@@ -48,13 +48,14 @@ impl SuperTile {
         let overlaps = self
             .pattern_states
             .iter()
-            .filter(|(_, enabled)| *enabled)
+            .filter(|(overlap, enabled)| *enabled && self.possible_flags.contains(overlap.get_tile_type(palette).into()))
             .collect_vec();
 
         let random = rand::random_range(0..overlaps.len());
         let new_flag = overlaps[random].0.get_tile_type(palette).into();
+        let possible = self.possible_flags;
         self.set_flag(new_flag, palette);
-        self.possible_flags ^ new_flag
+        possible ^ new_flag
     }
 
     pub fn disable_pattern(&mut self, pattern_id: PatternId, offset_pos: [usize; 2]) -> usize {
@@ -120,16 +121,8 @@ impl SuperTile {
             })
             .fold(WorldTileTypeFlags::all(), |acc, flags| acc & flags);
 
-        // let new_flags = self
-        //     .pattern_states
-        //     .iter()
-        //     .filter(|(_, enabled)| *enabled)
-        //     .fold(WorldTileTypeFlags::empty(), |acc, (overlap, _)| {
-        //         acc | overlap.get_tile_type(palette).into()
-        //     });
-
         let removed_flags = self.possible_flags ^ new_flags;
         self.possible_flags = new_flags;
-        return removed_flags;
+        removed_flags
     }
 }

@@ -90,5 +90,5 @@ impl PatternPalette {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct PatternId(usize);
