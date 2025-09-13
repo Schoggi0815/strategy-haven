@@ -1,10 +1,13 @@
 use itertools::Itertools;
 
-use crate::r#match::world::wfc::pattern_palette::{PatternId, PatternPalette};
+use crate::r#match::world::{
+    wfc::pattern_palette::{PatternId, PatternPalette},
+    world_tile_type::WorldTileType,
+};
 
 pub struct PatternOverlap {
-    pattern: PatternId,
-    offset: [usize; 2],
+    pub pattern: PatternId,
+    pub offset: [usize; 2],
 }
 
 impl PatternOverlap {
@@ -18,5 +21,9 @@ impl PatternOverlap {
                 pattern: pattern_id,
             })
             .collect_vec()
+    }
+
+    pub fn get_tile_type(&self, palette: &PatternPalette) -> WorldTileType {
+        palette.get_tile_type(self.pattern, self.offset)
     }
 }

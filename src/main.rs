@@ -13,7 +13,10 @@ use crate::{
         match_plugin::MatchPlugin,
         match_state::MatchState,
         world::{
-            wfc::{super_grid::SuperGrid, tile_grid::TileGrid},
+            wfc::{
+                pattern::Pattern, pattern_palette::PatternPalette, super_grid::SuperGrid,
+                tile_grid::TileGrid,
+            },
             world_tile_type::WorldTileType,
             world_tile_type_flags::WorldTileTypeFlags,
         },
@@ -26,10 +29,16 @@ fn main() {
         reference.set(x, y, WorldTileType::Beach);
     }
     println!("{}", reference);
-    let patterns = reference.get_patterns_square::<2>();
+    let patterns = reference.get_patterns_square::<3>();
     patterns.iter().for_each(|p| println!("{}", p.to_grid()));
-    let mut super_grid = SuperGrid::<10, 10, 2, 2>::new_empty(patterns, Vec::new());
-    super_grid.set(3, 3, WorldTileTypeFlags::Beach);
+    let pattern_palette = PatternPalette::new(
+        patterns
+            .into_iter()
+            .map(|pattern| -> Box<dyn Pattern> { Box::new(pattern) })
+            .collect(),
+    );
+    let mut super_grid = SuperGrid::<10, 10>::new_empty(pattern_palette);
+    // super_grid.set(3, 3, WorldTileTypeFlags::Beach);
     super_grid.collapse_grid();
     let new_grid = super_grid.to_tile_grid();
     println!("{}", new_grid);
