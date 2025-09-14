@@ -1,14 +1,14 @@
-use bevy::prelude::*;
-use itertools::Itertools;
+use crate::r#match::world::wfc::pattern::Pattern;
+use crate::r#match::world::wfc::pattern_palette::PatternPalette;
+use crate::r#match::world::wfc::super_grid::SuperGrid;
+use crate::r#match::world::wfc::tile_grid::TileGrid;
 use crate::r#match::world::{
     global_chances_resource::GlobalChancesResource, wfc_tile::WfcTile, world_state::WorldState,
     world_tile_position::WorldTilePosition, world_tile_type::WorldTileType,
     world_tile_type_flags::WorldTileTypeFlags,
 };
-use crate::r#match::world::wfc::pattern::Pattern;
-use crate::r#match::world::wfc::pattern_palette::PatternPalette;
-use crate::r#match::world::wfc::super_grid::SuperGrid;
-use crate::r#match::world::wfc::tile_grid::TileGrid;
+use bevy::prelude::*;
+use itertools::Itertools;
 
 const COLLAPSES_PER_FRAME: usize = 16;
 
@@ -28,7 +28,12 @@ impl Plugin for WorldPlugin {
     }
 }
 
-fn spawn_tiles(mut commands: Commands, mut world_state: ResMut<NextState<WorldState>>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>,) {
+fn spawn_tiles(
+    mut commands: Commands,
+    mut world_state: ResMut<NextState<WorldState>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     let mut reference = TileGrid::<9, 9>::new_filled(WorldTileType::Water);
     for (x, y) in (2..9).cartesian_product(2..9) {
         reference.set(x, y, WorldTileType::Beach);
@@ -50,22 +55,25 @@ fn spawn_tiles(mut commands: Commands, mut world_state: ResMut<NextState<WorldSt
     }
     println!("{}", reference);
     let patterns = reference.get_patterns_square::<3>();
-    patterns.iter().enumerate().for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid()));
+    patterns
+        .iter()
+        .enumerate()
+        .for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid()));
     let pattern_palette = PatternPalette::new(
         patterns
             .into_iter()
             .map(|pattern| -> Box<dyn Pattern> { Box::new(pattern) })
             .collect(),
     );
-    let mut super_grid = SuperGrid::<50, 50>::new_empty(pattern_palette);
-    super_grid.set(3, 3, WorldTileTypeFlags::Water);
+    let mut super_grid = SuperGrid::<30, 30>::new_empty(pattern_palette);
+    super_grid.set(3, 3, WorldTileTypeFlags::Forest);
     super_grid.collapse_grid();
     let new_grid = super_grid.to_tile_grid();
 
     let mesh = meshes.add(Cuboid::from_size(Vec3::ONE));
 
-    for x in 0..50 {
-        for y in 0..50 {
+    for x in 0..30 {
+        for y in 0..30 {
             // let position = WorldTilePosition::new(x, y);
             let tile_type = new_grid.get(x, y);
 

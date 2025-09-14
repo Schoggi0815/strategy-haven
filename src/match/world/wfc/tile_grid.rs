@@ -72,7 +72,16 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> TileGrid<X_SIZE, Y_SIZE> {
                 let pattern_rot1 = pattern.rotation();
                 let pattern_rot2 = pattern_rot1.rotation();
                 let pattern_rot3 = pattern_rot2.rotation();
-                [pattern, pattern_rot2, pattern_rot1, pattern_rot3]
+                [
+                    pattern.flip_x(),
+                    pattern_rot2.flip_x(),
+                    pattern_rot1.flip_x(),
+                    pattern_rot3.flip_x(),
+                    pattern,
+                    pattern_rot2,
+                    pattern_rot1,
+                    pattern_rot3,
+                ]
             })
             .sorted()
             .dedup()
@@ -87,7 +96,7 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> Display for TileGrid<X_SIZE, Y_SI
                 let tile = self.data[x][y];
 
                 let color = tile.get_color().to_linear();
-                let colored = format!("{:?}", tile).truecolor(
+                let colored = format!("{}", tile.name()).truecolor(
                     (color.red * 255.) as u8,
                     (color.green * 255.) as u8,
                     (color.blue * 255.) as u8,

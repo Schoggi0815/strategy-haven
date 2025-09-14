@@ -1,6 +1,3 @@
-use std::time::Duration;
-
-use bevy::platform::thread;
 use itertools::Itertools;
 
 use crate::r#match::world::{
@@ -46,37 +43,51 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> SuperGrid<X_SIZE, Y_SIZE> {
         position: [usize; 2],
         removed_flags: WorldTileTypeFlags,
     ) {
+        let mut positions_to_recalculate = vec![(position, removed_flags)];
         let mut updated_positions = Vec::new();
 
-        let occurances = self
-            .pattern_palette
-            .get_occurances::<X_SIZE, Y_SIZE>(removed_flags, position);
+        loop {
+            while let Some((position, removed_flags)) = positions_to_recalculate.pop() {
+                let occurances = self
+                    .pattern_palette
+                    .get_occurances::<X_SIZE, Y_SIZE>(removed_flags, position);
 
-        for (grid_pos, pattern_id, offset_pos) in occurances.iter() {
-            if self.grid[grid_pos[0]][grid_pos[1]].disable_pattern(*pattern_id, *offset_pos) > 0
-                && !updated_positions.contains(grid_pos)
-            {
-                updated_positions.push(*grid_pos);
+                for (grid_pos, pattern_id, offset_pos) in occurances {
+                    if self.grid[grid_pos[0]][grid_pos[1]].disable_pattern(pattern_id, offset_pos)
+                        && !updated_positions.contains(&grid_pos)
+                    {
+                        updated_positions.push(grid_pos);
+                    }
+                }
             }
-        }
 
-        for grid_pos in updated_positions {
-            let removed_flags = self.grid[grid_pos[0]][grid_pos[1]]
-                .recalculate_possible_flags(&self.pattern_palette);
+            let mut done = true;
 
-            if removed_flags.bits().count_ones() > 0 {
-                self.update_patterns_around(grid_pos, removed_flags);
+            for grid_pos in &updated_positions {
+                let removed_flags = self.grid[grid_pos[0]][grid_pos[1]]
+                    .recalculate_possible_flags(&self.pattern_palette);
+
+                if removed_flags.bits().count_ones() > 0 {
+                    done = false;
+                    positions_to_recalculate.push((*grid_pos, removed_flags));
+                }
             }
+
+            if done {
+                break;
+            }
+
+            updated_positions.clear();
         }
     }
 
     pub fn collapse_grid(&mut self) {
-        // let mut step_count = 0;
+        let mut step_count = 0;
 
         loop {
-            // println!("Step {}:", step_count);
-            // println!("{}", self.to_tile_grid());
-            // step_count += 1;
+            println!("Step {}:", step_count);
+            println!("{}", self.to_tile_grid());
+            step_count += 1;
 
             // thread::sleep(Duration::from_secs(1));
 
@@ -96,7 +107,7 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> SuperGrid<X_SIZE, Y_SIZE> {
             let x = index / Y_SIZE;
             let y = index % Y_SIZE;
 
-            // println!("POP: {:?}, {:?}", x, y);
+            println!("POP: {:?}, {:?}", x, y);
 
             let removed_flags = self.grid[x][y].pop_random_pattern(&self.pattern_palette);
             self.update_patterns_around([x, y], removed_flags);

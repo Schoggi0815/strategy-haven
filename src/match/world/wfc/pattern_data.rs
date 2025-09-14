@@ -1,3 +1,5 @@
+use std::array;
+
 use itertools::Itertools;
 
 use crate::r#match::world::{
@@ -22,6 +24,18 @@ impl<const P_SIZE_X: usize, const P_SIZE_Y: usize> PatternData<P_SIZE_X, P_SIZE_
         for y in 0..P_SIZE_X {
             for x in 0..P_SIZE_Y {
                 tiles[x][y] = self.tiles[P_SIZE_X - 1 - y][x];
+            }
+        }
+
+        PatternData { tiles }
+    }
+
+    pub fn flip_x(&self) -> PatternData<P_SIZE_X, P_SIZE_Y> {
+        let mut tiles = [[WorldTileType::Water; P_SIZE_Y]; P_SIZE_X];
+
+        for x in 0..P_SIZE_X {
+            for y in 0..P_SIZE_Y {
+                tiles[x][y] = self.tiles[P_SIZE_X - 1 - x][y];
             }
         }
 
@@ -68,5 +82,11 @@ impl<const P_SIZE_X: usize, const P_SIZE_Y: usize> Pattern for PatternData<P_SIZ
 
     fn get_tile_type(&self, position: [usize; 2]) -> WorldTileType {
         self.tiles[position[0]][position[1]]
+    }
+
+    fn get_offset_arrays(&self) -> Box<[Box<[bool]>]> {
+        Box::<[Box<[bool]>; P_SIZE_X]>::new(array::from_fn(|_| {
+            Box::new([true; P_SIZE_Y]) as Box<[bool]>
+        })) as Box<[Box<[bool]>]>
     }
 }

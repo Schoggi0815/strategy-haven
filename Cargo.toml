@@ -1,5 +1,5 @@
 [package]
-name = "strategy-haven"
+name = "strategy_haven"
 version = "0.1.0"
 edition = "2024"
 
@@ -11,8 +11,11 @@ opt-level = 1
 [profile.dev.package."*"]
 opt-level = 3
 
+[profile.release]
+debug = true
+
 [dependencies]
-bevy = { version = "0.16.1", features = ["dynamic_linking"] }
+bevy = { version = "0.16.1" }
 bevy_dylib = { version = "0.16.1" }
 log = { version = "*", features = [
     "max_level_debug",

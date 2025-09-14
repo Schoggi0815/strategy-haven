@@ -16,4 +16,5 @@ pub trait Pattern {
             .map(|(x, y)| [x, y])
             .collect_vec()
     }
+    fn get_offset_arrays(&self) -> Box<[Box<[bool]>]>;
 }
