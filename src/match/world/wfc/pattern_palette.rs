@@ -64,10 +64,11 @@ impl PatternPalette {
         PatternArray::new(self.patterns.len(), f)
     }
 
-    pub fn get_occurances<const GRID_X_SIZE: usize, const GRID_Y_SIZE: usize>(
+    pub fn get_occurances(
         &self,
         type_flags: WorldTileTypeFlags,
         position: [usize; 2],
+        grid_size: [usize; 2],
     ) -> impl Iterator<Item = ([usize; 2], PatternId, [usize; 2])> {
         // let grid_min_x = (position[0] as i32 - (self.max_size[0] as i32 - 1)).max(0) as usize;
         // let grid_min_y = (position[1] as i32 - (self.max_size[1] as i32 - 1)).max(0) as usize;
@@ -87,7 +88,6 @@ impl PatternPalette {
         self.get_type_occurances_in_patterns(type_flags).flat_map(
             move |(pattern_id, pattern_occurance_position)| {
                 let pattern_size = self.patterns[pattern_id.0].get_size();
-
                 (0..pattern_size[0])
                     .cartesian_product(0..pattern_size[1])
                     .filter(move |(pattern_x, pattern_y)| {
@@ -105,11 +105,11 @@ impl PatternPalette {
                             ],
                         )
                     })
-                    .filter(|(_, grid_pos)| {
+                    .filter(move |(_, grid_pos)| {
                         grid_pos[0] >= 0
-                            && grid_pos[0] < GRID_X_SIZE as i32
+                            && grid_pos[0] < grid_size[0] as i32
                             && grid_pos[1] >= 0
-                            && grid_pos[1] < GRID_Y_SIZE as i32
+                            && grid_pos[1] < grid_size[1] as i32
                     })
                     .map(move |(in_pattern_pos, grid_pos)| {
                         (

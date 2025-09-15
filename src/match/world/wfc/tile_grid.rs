@@ -6,14 +6,18 @@ use itertools::Itertools;
 use crate::r#match::world::{wfc::pattern_data::PatternData, world_tile_type::WorldTileType};
 
 #[derive(Debug)]
-pub struct TileGrid<const X_SIZE: usize, const Y_SIZE: usize> {
-    pub data: [[WorldTileType; Y_SIZE]; X_SIZE],
+pub struct TileGrid {
+    pub data: Vec<Vec<WorldTileType>>,
+    pub grid_size: [usize; 2],
 }
 
-impl<const X_SIZE: usize, const Y_SIZE: usize> TileGrid<X_SIZE, Y_SIZE> {
-    pub fn new_filled(tile_type: WorldTileType) -> Self {
+impl TileGrid {
+    pub fn new_filled(tile_type: WorldTileType, grid_size: [usize; 2]) -> Self {
         Self {
-            data: [[tile_type; Y_SIZE]; X_SIZE],
+            grid_size,
+            data: (0..grid_size[0])
+                .map(|_| (0..grid_size[1]).map(|_| tile_type).collect_vec())
+                .collect_vec(),
         }
     }
 
@@ -26,8 +30,8 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> TileGrid<X_SIZE, Y_SIZE> {
     }
 
     pub fn get_patterns<const P_SIZE_X: usize, const P_SIZE_Y: usize>(&self) -> Vec<PatternData> {
-        let all: Vec<_> = (0..X_SIZE - P_SIZE_X)
-            .cartesian_product(0..Y_SIZE - P_SIZE_Y)
+        let all: Vec<_> = (0..self.grid_size[0] - P_SIZE_X)
+            .cartesian_product(0..self.grid_size[1] - P_SIZE_Y)
             .flat_map(|(x, y)| {
                 let pattern_array = (0..P_SIZE_X)
                     .map(|pattern_x| {
@@ -60,10 +64,10 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> TileGrid<X_SIZE, Y_SIZE> {
     }
 }
 
-impl<const X_SIZE: usize, const Y_SIZE: usize> Display for TileGrid<X_SIZE, Y_SIZE> {
+impl Display for TileGrid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for y in 0..Y_SIZE {
-            for x in 0..X_SIZE {
+        for y in 0..self.grid_size[1] {
+            for x in 0..self.grid_size[0] {
                 let tile = self.data[x][y];
 
                 let color = tile.get_color().to_linear();

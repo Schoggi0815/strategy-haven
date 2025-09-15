@@ -77,14 +77,14 @@ impl PatternData {
         true
     }
 
-    pub fn to_grid<const X_SIZE: usize, const Y_SIZE: usize>(&self) -> TileGrid<X_SIZE, Y_SIZE> {
+    pub fn to_grid(&self) -> TileGrid {
         TileGrid {
             data: self
                 .tiles
                 .iter()
-                .map(|inner| inner.iter().cloned().collect_array::<Y_SIZE>().unwrap())
-                .collect_array::<X_SIZE>()
-                .unwrap(),
+                .map(|inner| inner.iter().cloned().collect_vec())
+                .collect_vec(),
+            grid_size: self.size,
         }
     }
 

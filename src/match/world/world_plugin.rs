@@ -33,7 +33,7 @@ fn spawn_tiles(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mut reference = TileGrid::<9, 9>::new_filled(WorldTileType::Water);
+    let mut reference = TileGrid::new_filled(WorldTileType::Water, [9, 9]);
     for (x, y) in (2..9).cartesian_product(2..9) {
         reference.set(x, y, WorldTileType::Beach);
     }
@@ -43,12 +43,12 @@ fn spawn_tiles(
     for (x, y) in (6..9).cartesian_product(5..9) {
         reference.set(x, y, WorldTileType::Forest);
     }
-    for (x, y) in (7..8).cartesian_product(0..3) {
-        reference.set(x, y, WorldTileType::Beach);
-    }
-    for (x, y) in (8..9).cartesian_product(0..4) {
-        reference.set(x, y, WorldTileType::Field);
-    }
+    // for (x, y) in (7..8).cartesian_product(0..3) {
+    //     reference.set(x, y, WorldTileType::Beach);
+    // }
+    // for (x, y) in (8..9).cartesian_product(0..4) {
+    //     reference.set(x, y, WorldTileType::Field);
+    // }
     for (x, y) in (5..6).cartesian_product(7..9) {
         reference.set(x, y, WorldTileType::Forest);
     }
@@ -57,23 +57,45 @@ fn spawn_tiles(
     patterns
         .iter()
         .enumerate()
-        .for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid::<3, 3>()));
+        .for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid()));
     let pattern_palette = PatternPalette::new(patterns);
-    let mut super_grid = SuperGrid::<30, 30>::new_empty(pattern_palette);
-    super_grid.set(3, 3, WorldTileTypeFlags::Forest);
+    let mut super_grid = SuperGrid::new_empty(pattern_palette, [100, 200]);
+    super_grid.set(3, 3, WorldTileTypeFlags::Beach);
     super_grid.collapse_grid();
     let new_grid = super_grid.to_tile_grid();
 
     let mesh = meshes.add(Cuboid::from_size(Vec3::ONE));
 
-    for x in 0..30 {
-        for y in 0..30 {
+    let water_material = materials.add(StandardMaterial::from_color(
+        WorldTileType::Water.get_color(),
+    ));
+    let beach_material = materials.add(StandardMaterial::from_color(
+        WorldTileType::Beach.get_color(),
+    ));
+    let field_material = materials.add(StandardMaterial::from_color(
+        WorldTileType::Field.get_color(),
+    ));
+    let forest_material = materials.add(StandardMaterial::from_color(
+        WorldTileType::Forest.get_color(),
+    ));
+    let mountain_material = materials.add(StandardMaterial::from_color(
+        WorldTileType::Mountain.get_color(),
+    ));
+
+    for x in 0..100 {
+        for y in 0..200 {
             // let position = WorldTilePosition::new(x, y);
             let tile_type = new_grid.get(x, y);
 
             commands.spawn((
                 Mesh3d(mesh.clone()),
-                MeshMaterial3d(materials.add(StandardMaterial::from_color(tile_type.get_color()))),
+                MeshMaterial3d(match tile_type {
+                    WorldTileType::Water => water_material.clone(),
+                    WorldTileType::Field => field_material.clone(),
+                    WorldTileType::Forest => forest_material.clone(),
+                    WorldTileType::Mountain => mountain_material.clone(),
+                    WorldTileType::Beach => beach_material.clone(),
+                }),
                 Transform::from_xyz(x as f32, 0., y as f32),
             ));
         }

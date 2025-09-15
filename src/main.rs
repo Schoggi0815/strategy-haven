@@ -20,8 +20,8 @@ use crate::{
     },
 };
 
-fn main() {
-    let mut reference = TileGrid::<9, 11>::new_filled(WorldTileType::Water);
+fn main2() {
+    let mut reference = TileGrid::new_filled(WorldTileType::Water, [9, 11]);
     for (x, y) in (2..9).cartesian_product(4..11) {
         reference.set(x, y, WorldTileType::Beach);
     }
@@ -49,14 +49,14 @@ fn main() {
     //     .for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid()));
     // return;
     let pattern_palette = PatternPalette::new(patterns);
-    let mut super_grid = SuperGrid::<200, 200>::new_empty(pattern_palette);
+    let mut super_grid = SuperGrid::new_empty(pattern_palette, [200, 200]);
     super_grid.set(3, 3, WorldTileTypeFlags::Beach);
     super_grid.collapse_grid();
     let new_grid = super_grid.to_tile_grid();
     println!("{}", new_grid);
 }
 
-fn main2() {
+fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins,

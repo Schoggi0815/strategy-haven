@@ -2,20 +2,20 @@ use itertools::Itertools;
 
 use crate::r#match::world::{
     wfc::{pattern_palette::PatternPalette, super_tile::SuperTile, tile_grid::TileGrid},
-    world_tile_type::WorldTileType,
     world_tile_type_flags::WorldTileTypeFlags,
 };
 
-pub struct SuperGrid<const X_SIZE: usize, const Y_SIZE: usize> {
+pub struct SuperGrid {
     grid: Vec<Vec<SuperTile>>,
     pattern_palette: PatternPalette,
+    size: [usize; 2],
 }
 
-impl<const X_SIZE: usize, const Y_SIZE: usize> SuperGrid<X_SIZE, Y_SIZE> {
-    pub fn new_empty(pattern_palette: PatternPalette) -> Self {
-        let grid = (0..X_SIZE)
+impl SuperGrid {
+    pub fn new_empty(pattern_palette: PatternPalette, size: [usize; 2]) -> Self {
+        let grid = (0..size[0])
             .map(|_| {
-                (0..Y_SIZE)
+                (0..size[1])
                     .map(|_| SuperTile::new(&pattern_palette))
                     .collect_vec()
             })
@@ -24,6 +24,7 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> SuperGrid<X_SIZE, Y_SIZE> {
         Self {
             grid,
             pattern_palette,
+            size,
         }
     }
 
@@ -46,9 +47,9 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> SuperGrid<X_SIZE, Y_SIZE> {
 
         loop {
             while let Some((position, removed_flags)) = positions_to_recalculate.pop() {
-                let occurances = self
-                    .pattern_palette
-                    .get_occurances::<X_SIZE, Y_SIZE>(removed_flags, position);
+                let occurances =
+                    self.pattern_palette
+                        .get_occurances(removed_flags, position, self.size);
 
                 for (grid_pos, pattern_id, offset_pos) in occurances {
                     if self.grid[grid_pos[0]][grid_pos[1]].disable_pattern(pattern_id, offset_pos)
@@ -101,8 +102,8 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> SuperGrid<X_SIZE, Y_SIZE> {
                 break;
             };
 
-            let x = index / Y_SIZE;
-            let y = index % Y_SIZE;
+            let x = index / self.size[1];
+            let y = index % self.size[1];
 
             // println!("POP: {:?}, {:?}", x, y);
 
@@ -111,20 +112,16 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> SuperGrid<X_SIZE, Y_SIZE> {
         }
     }
 
-    pub fn to_tile_grid(&self) -> TileGrid<X_SIZE, Y_SIZE> {
-        let data: [[WorldTileType; Y_SIZE]; X_SIZE] = self
+    pub fn to_tile_grid(&self) -> TileGrid {
+        let data = self
             .grid
             .iter()
-            .map(|column| {
-                column
-                    .iter()
-                    .map(|tile| tile.to_tile_type())
-                    .collect_array::<Y_SIZE>()
-                    .unwrap()
-            })
-            .collect_array::<X_SIZE>()
-            .unwrap();
+            .map(|column| column.iter().map(|tile| tile.to_tile_type()).collect_vec())
+            .collect_vec();
 
-        TileGrid { data }
+        TileGrid {
+            data,
+            grid_size: self.size,
+        }
     }
 }
