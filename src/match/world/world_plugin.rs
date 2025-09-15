@@ -1,4 +1,3 @@
-use crate::r#match::world::wfc::pattern::Pattern;
 use crate::r#match::world::wfc::pattern_palette::PatternPalette;
 use crate::r#match::world::wfc::super_grid::SuperGrid;
 use crate::r#match::world::wfc::tile_grid::TileGrid;
@@ -54,17 +53,12 @@ fn spawn_tiles(
         reference.set(x, y, WorldTileType::Forest);
     }
     println!("{}", reference);
-    let patterns = reference.get_patterns_square::<3>();
+    let patterns = reference.get_patterns::<3, 3>();
     patterns
         .iter()
         .enumerate()
-        .for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid()));
-    let pattern_palette = PatternPalette::new(
-        patterns
-            .into_iter()
-            .map(|pattern| -> Box<dyn Pattern> { Box::new(pattern) })
-            .collect(),
-    );
+        .for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid::<3, 3>()));
+    let pattern_palette = PatternPalette::new(patterns);
     let mut super_grid = SuperGrid::<30, 30>::new_empty(pattern_palette);
     super_grid.set(3, 3, WorldTileTypeFlags::Forest);
     super_grid.collapse_grid();

@@ -13,10 +13,7 @@ use crate::{
         match_plugin::MatchPlugin,
         match_state::MatchState,
         world::{
-            wfc::{
-                pattern::Pattern, pattern_palette::PatternPalette, super_grid::SuperGrid,
-                tile_grid::TileGrid,
-            },
+            wfc::{pattern_palette::PatternPalette, super_grid::SuperGrid, tile_grid::TileGrid},
             world_tile_type::WorldTileType,
             world_tile_type_flags::WorldTileTypeFlags,
         },
@@ -34,30 +31,25 @@ fn main() {
     for (x, y) in (6..9).cartesian_product(7..11) {
         reference.set(x, y, WorldTileType::Forest);
     }
-    for (x, y) in (6..9).cartesian_product(0..5) {
-        reference.set(x, y, WorldTileType::Beach);
-    }
-    for (x, y) in (7..9).cartesian_product(1..6) {
-        reference.set(x, y, WorldTileType::Field);
-    }
+    // for (x, y) in (6..9).cartesian_product(0..5) {
+    //     reference.set(x, y, WorldTileType::Beach);
+    // }
+    // for (x, y) in (7..9).cartesian_product(1..6) {
+    //     reference.set(x, y, WorldTileType::Field);
+    // }
     for (x, y) in (5..6).cartesian_product(9..11) {
         reference.set(x, y, WorldTileType::Forest);
     }
     // println!("{}", reference);
     // return;
-    let patterns = reference.get_patterns_square::<3>();
+    let patterns = reference.get_patterns::<3, 3>();
     // patterns
     //     .iter()
     //     .enumerate()
     //     .for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid()));
     // return;
-    let pattern_palette = PatternPalette::new(
-        patterns
-            .into_iter()
-            .map(|pattern| -> Box<dyn Pattern> { Box::new(pattern) })
-            .collect(),
-    );
-    let mut super_grid = SuperGrid::<30, 60>::new_empty(pattern_palette);
+    let pattern_palette = PatternPalette::new(patterns);
+    let mut super_grid = SuperGrid::<200, 200>::new_empty(pattern_palette);
     super_grid.set(3, 3, WorldTileTypeFlags::Beach);
     super_grid.collapse_grid();
     let new_grid = super_grid.to_tile_grid();

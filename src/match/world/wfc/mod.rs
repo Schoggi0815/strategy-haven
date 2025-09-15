@@ -1,4 +1,3 @@
-pub mod pattern;
 pub mod pattern_data;
 pub mod pattern_overlap;
 pub mod pattern_palette;

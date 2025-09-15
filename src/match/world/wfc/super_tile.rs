@@ -10,7 +10,7 @@ use crate::r#match::world::{
 };
 
 pub struct SuperTile {
-    pattern_states: PatternArray<Box<[Box<[bool]>]>>,
+    pattern_states: PatternArray<Vec<Vec<bool>>>,
     possible_flags: WorldTileTypeFlags,
     entropy: usize,
 }
@@ -22,6 +22,7 @@ impl SuperTile {
         Self {
             possible_flags: WorldTileTypeFlags::all(),
             entropy: pattern_states
+                .0
                 .iter()
                 .flat_map(|offsets| offsets.iter().flatten())
                 .count(),
@@ -41,24 +42,39 @@ impl SuperTile {
         self.possible_flags.get_tile_type()
     }
 
-    fn enabled_patterns(&self) -> impl Iterator<Item = PatternOverlap> {
-        self.pattern_states.enumerate().flat_map(|(id, offsets)| {
-            offsets.iter().enumerate().flat_map(move |(x, offset)| {
-                offset
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, enabled)| **enabled)
-                    .map(move |(y, _)| PatternOverlap {
-                        offset: [x, y],
-                        pattern: id,
-                    })
+    pub fn enabled_patterns(&self) -> impl Iterator<Item = ([usize; 2], PatternId)> {
+        self.pattern_states
+            .0
+            .iter()
+            .enumerate()
+            .flat_map(|(id, offsets)| {
+                offsets.iter().enumerate().flat_map(move |(x, offset)| {
+                    offset
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, enabled)| **enabled)
+                        .map(move |(y, _)| ([x, y], PatternId(id)))
+                })
             })
-        })
+    }
+
+    pub fn enabled_pattern_ids(&self) -> impl Iterator<Item = PatternId> {
+        self.pattern_states
+            .0
+            .iter()
+            .enumerate()
+            .filter(|(_, states)| {
+                states
+                    .iter()
+                    .any(|column| column.iter().any(|value| *value))
+            })
+            .map(|(pattern_id, _)| PatternId(pattern_id))
     }
 
     pub fn pop_random_pattern(&mut self, palette: &PatternPalette) -> WorldTileTypeFlags {
         let overlaps = self
             .enabled_patterns()
+            .map(|(offset, pattern)| PatternOverlap { offset, pattern })
             .filter(|overlap| {
                 self.possible_flags
                     .contains(overlap.get_tile_type(palette).into())
@@ -69,14 +85,33 @@ impl SuperTile {
         let new_flag = overlaps[random].get_tile_type(palette).into();
         let possible = self.possible_flags;
         self.set_flag(new_flag, palette);
-        println!("New flag: {:?}", new_flag);
+        // println!("New flag: {:?}", new_flag);
         possible ^ new_flag
     }
 
+    pub fn disable_patterns(
+        &mut self,
+        pattern_positions: impl Iterator<Item = (PatternId, [usize; 2])>,
+    ) -> bool {
+        let updated = pattern_positions
+            .filter(|(pattern_id, offset_pos)| {
+                self.pattern_states.0[pattern_id.0][offset_pos[0]][offset_pos[1]]
+            })
+            .collect_vec()
+            .into_iter()
+            .map(|(pattern_id, offset_pos)| {
+                self.pattern_states.0[pattern_id.0][offset_pos[0]][offset_pos[1]] = false;
+                ()
+            })
+            .count();
+
+        self.entropy -= updated;
+        updated > 0
+    }
+
     pub fn disable_pattern(&mut self, pattern_id: PatternId, offset_pos: [usize; 2]) -> bool {
-        let pattern_state = &mut self.pattern_states[pattern_id][offset_pos[0]][offset_pos[1]];
-        if *pattern_state {
-            *pattern_state = false;
+        if self.pattern_states.0[pattern_id.0][offset_pos[0]][offset_pos[1]] {
+            self.pattern_states.0[pattern_id.0][offset_pos[0]][offset_pos[1]] = false;
             self.entropy -= 1;
             return true;
         }
@@ -98,7 +133,9 @@ impl SuperTile {
         }
 
         self.pattern_states
-            .enumerate_mut()
+            .0
+            .iter_mut()
+            .enumerate()
             .for_each(|(id, offsets)| {
                 offsets.iter_mut().enumerate().for_each(|(x, offsets)| {
                     offsets
@@ -106,8 +143,8 @@ impl SuperTile {
                         .enumerate()
                         .filter(|(_, enabled)| **enabled)
                         .for_each(|(y, enabled)| {
-                            let new_value =
-                                tile_flags.contains(palette.get_tile_type(&id, [x, y]).into());
+                            let new_value = tile_flags
+                                .contains(palette.get_tile_type(&PatternId(id), [x, y]).into());
                             if !new_value {
                                 self.entropy -= 1;
                             }
@@ -127,12 +164,16 @@ impl SuperTile {
             |acc, (x, y)| {
                 acc & self
                     .pattern_states
+                    .0
+                    .iter()
                     .enumerate()
                     .filter(|(id, offsets)| {
-                        palette.get_size(id)[0] > x && palette.get_size(id)[1] > y && offsets[x][y]
+                        palette.get_size(&PatternId(*id))[0] > x
+                            && palette.get_size(&PatternId(*id))[1] > y
+                            && offsets[x][y]
                     })
                     .fold(WorldTileTypeFlags::empty(), |acc, (id, _)| {
-                        acc | palette.get_tile_type(&id, [x, y]).into()
+                        acc | palette.get_tile_type(&PatternId(id), [x, y]).into()
                     })
             },
         );

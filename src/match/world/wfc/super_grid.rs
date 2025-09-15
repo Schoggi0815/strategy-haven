@@ -7,7 +7,7 @@ use crate::r#match::world::{
 };
 
 pub struct SuperGrid<const X_SIZE: usize, const Y_SIZE: usize> {
-    grid: [[SuperTile; Y_SIZE]; X_SIZE],
+    grid: Vec<Vec<SuperTile>>,
     pattern_palette: PatternPalette,
 }
 
@@ -17,11 +17,9 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> SuperGrid<X_SIZE, Y_SIZE> {
             .map(|_| {
                 (0..Y_SIZE)
                     .map(|_| SuperTile::new(&pattern_palette))
-                    .collect_array::<Y_SIZE>()
-                    .unwrap()
+                    .collect_vec()
             })
-            .collect_array()
-            .unwrap();
+            .collect_vec();
 
         Self {
             grid,
@@ -82,12 +80,12 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> SuperGrid<X_SIZE, Y_SIZE> {
     }
 
     pub fn collapse_grid(&mut self) {
-        let mut step_count = 0;
+        // let mut step_count = 0;
 
         loop {
-            println!("Step {}:", step_count);
-            println!("{}", self.to_tile_grid());
-            step_count += 1;
+            // println!("Step {}:", step_count);
+            // println!("{}", self.to_tile_grid());
+            // step_count += 1;
 
             // thread::sleep(Duration::from_secs(1));
 
@@ -96,18 +94,17 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> SuperGrid<X_SIZE, Y_SIZE> {
                 .iter()
                 .flatten()
                 .enumerate()
-                .sorted_by(|(_, flags_a), (_, flags_b)| flags_a.entropy().cmp(&flags_b.entropy()))
                 .filter(|(_, flags)| flags.get_type_count() > 1)
-                .collect::<Vec<_>>();
+                .min_by(|(_, flags_a), (_, flags_b)| flags_a.entropy().cmp(&flags_b.entropy()));
 
-            let Some((index, _)) = next.first() else {
+            let Some((index, _)) = next else {
                 break;
             };
 
             let x = index / Y_SIZE;
             let y = index % Y_SIZE;
 
-            println!("POP: {:?}, {:?}", x, y);
+            // println!("POP: {:?}, {:?}", x, y);
 
             let removed_flags = self.grid[x][y].pop_random_pattern(&self.pattern_palette);
             self.update_patterns_around([x, y], removed_flags);

@@ -6,18 +6,18 @@ use std::{
 use itertools::Itertools;
 
 use crate::r#match::world::{
-    wfc::pattern::Pattern, world_tile_type::WorldTileType,
+    wfc::pattern_data::PatternData, world_tile_type::WorldTileType,
     world_tile_type_flags::WorldTileTypeFlags,
 };
 
 pub struct PatternPalette {
-    patterns: Vec<Box<dyn Pattern>>,
+    patterns: Vec<PatternData>,
     size_cache: Vec<[usize; 2]>,
     max_size: [usize; 2],
 }
 
 impl PatternPalette {
-    pub fn new(patterns: Vec<Box<dyn Pattern>>) -> Self {
+    pub fn new(patterns: Vec<PatternData>) -> Self {
         let size_cache = patterns
             .iter()
             .map(|pattern| pattern.get_size())
@@ -53,7 +53,7 @@ impl PatternPalette {
         (0..self.patterns.len()).map(|i| PatternId(i)).collect_vec()
     }
 
-    pub fn get_offset_arrays(&self, pattern_id: PatternId) -> Box<[Box<[bool]>]> {
+    pub fn get_offset_arrays(&self, pattern_id: PatternId) -> Vec<Vec<bool>> {
         self.patterns[pattern_id.0].get_offset_arrays()
     }
 
@@ -69,6 +69,21 @@ impl PatternPalette {
         type_flags: WorldTileTypeFlags,
         position: [usize; 2],
     ) -> impl Iterator<Item = ([usize; 2], PatternId, [usize; 2])> {
+        // let grid_min_x = (position[0] as i32 - (self.max_size[0] as i32 - 1)).max(0) as usize;
+        // let grid_min_y = (position[1] as i32 - (self.max_size[1] as i32 - 1)).max(0) as usize;
+
+        // let grid_max_x = (position[0] as i32 + (self.max_size[0] as i32 - 1))
+        //     .min(GRID_X_SIZE as i32 - 1) as usize;
+        // let grid_max_y = (position[1] as i32 + (self.max_size[1] as i32 - 1))
+        //     .min(GRID_Y_SIZE as i32 - 1) as usize;
+
+        // (grid_min_x..grid_max_x).cartesian_product(grid_min_y..grid_max_y).map(|(grid_x, grid_y)| {
+        //     let tile = grid[grid_x][grid_y];
+        //     tile.enabled_pattern_ids().flat_map(|pattern_id| {
+        //         self.patterns[pattern_id.0].get_tile_occurances(type_flags).map(|occurrence| )
+        //     })
+        // })
+
         self.get_type_occurances_in_patterns(type_flags).flat_map(
             move |(pattern_id, pattern_occurance_position)| {
                 let pattern_size = self.patterns[pattern_id.0].get_size();
@@ -117,17 +132,15 @@ impl PatternPalette {
             .flat_map(move |(id, pattern)| {
                 pattern
                     .get_tile_occurances(type_flags)
-                    .iter()
-                    .map(|to| (PatternId(id), *to))
-                    .collect_vec()
+                    .map(move |to| (PatternId(id), to))
             })
     }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
-pub struct PatternId(usize);
+pub struct PatternId(pub usize);
 
-pub struct PatternArray<T>(Vec<T>);
+pub struct PatternArray<T>(pub Vec<T>);
 
 impl<T> PatternArray<T> {
     fn new<F>(size: usize, mut f: F) -> Self

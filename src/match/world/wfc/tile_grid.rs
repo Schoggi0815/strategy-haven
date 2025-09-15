@@ -25,50 +25,19 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> TileGrid<X_SIZE, Y_SIZE> {
         self.data[x][y]
     }
 
-    pub fn get_patterns<const P_SIZE_X: usize, const P_SIZE_Y: usize>(
-        &self,
-    ) -> (
-        Vec<PatternData<P_SIZE_X, P_SIZE_Y>>,
-        Vec<PatternData<P_SIZE_Y, P_SIZE_X>>,
-    ) {
-        let (all, all_rotated): (Vec<_>, Vec<_>) = (0..X_SIZE - P_SIZE_X)
+    pub fn get_patterns<const P_SIZE_X: usize, const P_SIZE_Y: usize>(&self) -> Vec<PatternData> {
+        let all: Vec<_> = (0..X_SIZE - P_SIZE_X)
             .cartesian_product(0..Y_SIZE - P_SIZE_Y)
-            .map(|(x, y)| {
-                let mut pattern_array = [[WorldTileType::Water; P_SIZE_Y]; P_SIZE_X];
-
-                for (pattern_x, pattern_y) in (0..P_SIZE_X).cartesian_product(0..P_SIZE_Y) {
-                    pattern_array[pattern_x][pattern_y] = self.data[x + pattern_x][y + pattern_y];
-                }
-
-                let pattern = PatternData::new(pattern_array);
-                let pattern_rot1 = pattern.rotation();
-                let pattern_rot2 = pattern_rot1.rotation();
-                let pattern_rot3 = pattern_rot2.rotation();
-                ([pattern, pattern_rot2], [pattern_rot1, pattern_rot3])
-            })
-            .unzip();
-
-        let mut all = all.into_flattened();
-        all.sort();
-        all.dedup();
-        let mut all_rotated = all_rotated.into_flattened();
-        all_rotated.sort();
-        all_rotated.dedup();
-
-        (all, all_rotated)
-    }
-
-    pub fn get_patterns_square<const P_SIZE: usize>(&self) -> Vec<PatternData<P_SIZE, P_SIZE>> {
-        (0..X_SIZE - P_SIZE)
-            .cartesian_product(0..Y_SIZE - P_SIZE)
             .flat_map(|(x, y)| {
-                let mut pattern_array = [[WorldTileType::Water; P_SIZE]; P_SIZE];
+                let pattern_array = (0..P_SIZE_X)
+                    .map(|pattern_x| {
+                        (0..P_SIZE_Y)
+                            .map(|pattern_y| self.data[x + pattern_x][y + pattern_y])
+                            .collect_vec()
+                    })
+                    .collect_vec();
 
-                for (pattern_x, pattern_y) in (0..P_SIZE).cartesian_product(0..P_SIZE) {
-                    pattern_array[pattern_x][pattern_y] = self.data[x + pattern_x][y + pattern_y];
-                }
-
-                let pattern = PatternData::new(pattern_array);
+                let pattern = PatternData::new(pattern_array, [P_SIZE_X, P_SIZE_Y]);
                 let pattern_rot1 = pattern.rotation();
                 let pattern_rot2 = pattern_rot1.rotation();
                 let pattern_rot3 = pattern_rot2.rotation();
@@ -85,7 +54,9 @@ impl<const X_SIZE: usize, const Y_SIZE: usize> TileGrid<X_SIZE, Y_SIZE> {
             })
             .sorted()
             .dedup()
-            .collect_vec()
+            .collect_vec();
+
+        all
     }
 }
 

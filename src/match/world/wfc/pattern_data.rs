@@ -1,45 +1,52 @@
-use std::array;
-
 use itertools::Itertools;
 
 use crate::r#match::world::{
-    wfc::{pattern::Pattern, tile_grid::TileGrid},
-    world_tile_type::WorldTileType,
+    wfc::tile_grid::TileGrid, world_tile_type::WorldTileType,
     world_tile_type_flags::WorldTileTypeFlags,
 };
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct PatternData<const P_SIZE_X: usize, const P_SIZE_Y: usize> {
-    tiles: [[WorldTileType; P_SIZE_Y]; P_SIZE_X],
+pub struct PatternData {
+    size: [usize; 2],
+    tiles: Vec<Vec<WorldTileType>>,
 }
 
-impl<const P_SIZE_X: usize, const P_SIZE_Y: usize> PatternData<P_SIZE_X, P_SIZE_Y> {
-    pub fn new(tiles: [[WorldTileType; P_SIZE_Y]; P_SIZE_X]) -> Self {
-        Self { tiles }
+impl PatternData {
+    pub fn new(tiles: Vec<Vec<WorldTileType>>, size: [usize; 2]) -> Self {
+        Self { tiles, size }
     }
 
-    pub fn rotation(&self) -> PatternData<P_SIZE_Y, P_SIZE_X> {
-        let mut tiles = [[WorldTileType::Water; P_SIZE_X]; P_SIZE_Y];
+    pub fn rotation(&self) -> PatternData {
+        let new_size = [self.size[1], self.size[0]];
+        let mut tiles = Vec::with_capacity(new_size[0]);
 
-        for y in 0..P_SIZE_X {
-            for x in 0..P_SIZE_Y {
-                tiles[x][y] = self.tiles[P_SIZE_X - 1 - y][x];
+        for x in 0..new_size[0] {
+            tiles.push(Vec::with_capacity(new_size[1]));
+            for y in 0..new_size[1] {
+                tiles[x].push(self.tiles[self.size[0] - 1 - y][x]);
             }
         }
 
-        PatternData { tiles }
+        PatternData {
+            tiles,
+            size: new_size,
+        }
     }
 
-    pub fn flip_x(&self) -> PatternData<P_SIZE_X, P_SIZE_Y> {
-        let mut tiles = [[WorldTileType::Water; P_SIZE_Y]; P_SIZE_X];
+    pub fn flip_x(&self) -> PatternData {
+        let mut tiles = Vec::with_capacity(self.size[0]);
 
-        for x in 0..P_SIZE_X {
-            for y in 0..P_SIZE_Y {
-                tiles[x][y] = self.tiles[P_SIZE_X - 1 - x][y];
+        for x in 0..self.size[0] {
+            tiles.push(Vec::with_capacity(self.size[1]));
+            for y in 0..self.size[1] {
+                tiles[x].push(self.tiles[self.size[0] - 1 - x][y]);
             }
         }
 
-        PatternData { tiles }
+        PatternData {
+            tiles,
+            size: self.size,
+        }
     }
 
     pub fn get_type_at(&self, x: usize, y: usize) -> WorldTileType {
@@ -51,7 +58,7 @@ impl<const P_SIZE_X: usize, const P_SIZE_Y: usize> PatternData<P_SIZE_X, P_SIZE_
         grid: &[[WorldTileTypeFlags; Y_SIZE]; X_SIZE],
         pattern_offset: [i32; 2],
     ) -> bool {
-        for (x, y) in (0..P_SIZE_X).cartesian_product(0..P_SIZE_Y) {
+        for (x, y) in (0..self.size[0]).cartesian_product(0..self.size[1]) {
             let grid_x = x as i32 + pattern_offset[0];
             let grid_y = y as i32 + pattern_offset[1];
 
@@ -70,23 +77,40 @@ impl<const P_SIZE_X: usize, const P_SIZE_Y: usize> PatternData<P_SIZE_X, P_SIZE_
         true
     }
 
-    pub fn to_grid(&self) -> TileGrid<P_SIZE_X, P_SIZE_Y> {
-        TileGrid { data: self.tiles }
+    pub fn to_grid<const X_SIZE: usize, const Y_SIZE: usize>(&self) -> TileGrid<X_SIZE, Y_SIZE> {
+        TileGrid {
+            data: self
+                .tiles
+                .iter()
+                .map(|inner| inner.iter().cloned().collect_array::<Y_SIZE>().unwrap())
+                .collect_array::<X_SIZE>()
+                .unwrap(),
+        }
     }
-}
 
-impl<const P_SIZE_X: usize, const P_SIZE_Y: usize> Pattern for PatternData<P_SIZE_X, P_SIZE_Y> {
-    fn get_size(&self) -> [usize; 2] {
-        [P_SIZE_X, P_SIZE_Y]
+    pub fn get_size(&self) -> [usize; 2] {
+        self.size
     }
 
-    fn get_tile_type(&self, position: [usize; 2]) -> WorldTileType {
+    pub fn get_tile_type(&self, position: [usize; 2]) -> WorldTileType {
         self.tiles[position[0]][position[1]]
     }
 
-    fn get_offset_arrays(&self) -> Box<[Box<[bool]>]> {
-        Box::<[Box<[bool]>; P_SIZE_X]>::new(array::from_fn(|_| {
-            Box::new([true; P_SIZE_Y]) as Box<[bool]>
-        })) as Box<[Box<[bool]>]>
+    pub fn get_offset_arrays(&self) -> Vec<Vec<bool>> {
+        (0..self.size[0])
+            .map(|_| (0..self.size[1]).map(|_| true).collect_vec())
+            .collect_vec()
+    }
+
+    pub fn get_tile_occurances(
+        &self,
+        type_flags: WorldTileTypeFlags,
+    ) -> impl Iterator<Item = [usize; 2]> {
+        let size = self.get_size();
+
+        (0..size[0])
+            .cartesian_product(0..size[1])
+            .filter(move |(x, y)| type_flags.contains(self.get_tile_type([*x, *y]).into()))
+            .map(|(x, y)| [x, y])
     }
 }
