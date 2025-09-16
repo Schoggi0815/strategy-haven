@@ -2,10 +2,11 @@ use std::fmt::Display;
 
 use colored::Colorize;
 use itertools::Itertools;
+use serde::{Deserialize, Serialize};
 
 use crate::r#match::world::{wfc::pattern_data::PatternData, world_tile_type::WorldTileType};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TileGrid {
     pub data: Vec<Vec<WorldTileType>>,
     pub grid_size: [usize; 2],
@@ -27,6 +28,19 @@ impl TileGrid {
 
     pub fn get(&self, x: usize, y: usize) -> WorldTileType {
         self.data[x][y]
+    }
+
+    pub fn resize(&mut self, new_size: [usize; 2]) {
+        self.grid_size = new_size;
+
+        self.data
+            .iter_mut()
+            .for_each(|column| column.resize(new_size[1], WorldTileType::Water));
+
+        self.data.resize(
+            new_size[0],
+            (0..new_size[1]).map(|_| WorldTileType::Water).collect_vec(),
+        );
     }
 
     pub fn get_patterns<const P_SIZE_X: usize, const P_SIZE_Y: usize>(&self) -> Vec<PatternData> {

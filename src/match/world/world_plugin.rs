@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::Read;
+
 use crate::r#match::world::wfc::pattern_palette::PatternPalette;
 use crate::r#match::world::wfc::super_grid::SuperGrid;
 use crate::r#match::world::wfc::tile_grid::TileGrid;
@@ -7,7 +10,6 @@ use crate::r#match::world::{
     world_tile_type_flags::WorldTileTypeFlags,
 };
 use bevy::prelude::*;
-use itertools::Itertools;
 
 const COLLAPSES_PER_FRAME: usize = 16;
 
@@ -33,25 +35,13 @@ fn spawn_tiles(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mut reference = TileGrid::new_filled(WorldTileType::Water, [9, 9]);
-    for (x, y) in (2..9).cartesian_product(2..9) {
-        reference.set(x, y, WorldTileType::Beach);
-    }
-    for (x, y) in (3..9).cartesian_product(3..9) {
-        reference.set(x, y, WorldTileType::Field);
-    }
-    for (x, y) in (6..9).cartesian_product(5..9) {
-        reference.set(x, y, WorldTileType::Forest);
-    }
-    // for (x, y) in (7..8).cartesian_product(0..3) {
-    //     reference.set(x, y, WorldTileType::Beach);
-    // }
-    // for (x, y) in (8..9).cartesian_product(0..4) {
-    //     reference.set(x, y, WorldTileType::Field);
-    // }
-    for (x, y) in (5..6).cartesian_product(7..9) {
-        reference.set(x, y, WorldTileType::Forest);
-    }
+    let mut file = File::open("assets/wfc_preset.ron").expect("Could not open preset file!");
+    let mut ron_string = String::new();
+    file.read_to_string(&mut ron_string)
+        .expect("Could not read file.");
+
+    let reference: TileGrid = ron::from_str(&ron_string).expect("Could not parse file.");
+
     println!("{}", reference);
     let patterns = reference.get_patterns::<3, 3>();
     patterns
@@ -59,7 +49,7 @@ fn spawn_tiles(
         .enumerate()
         .for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid()));
     let pattern_palette = PatternPalette::new(patterns);
-    let mut super_grid = SuperGrid::new_empty(pattern_palette, [100, 200]);
+    let mut super_grid = SuperGrid::new_empty(pattern_palette, [100, 100]);
     super_grid.set(3, 3, WorldTileTypeFlags::Beach);
     super_grid.collapse_grid();
     let new_grid = super_grid.to_tile_grid();
@@ -83,7 +73,7 @@ fn spawn_tiles(
     ));
 
     for x in 0..100 {
-        for y in 0..200 {
+        for y in 0..100 {
             // let position = WorldTilePosition::new(x, y);
             let tile_type = new_grid.get(x, y);
 
