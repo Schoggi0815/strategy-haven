@@ -1,7 +1,4 @@
-use std::{
-    ops::{Index, IndexMut},
-    slice::{Iter, IterMut},
-};
+use std::ops::{Index, IndexMut};
 
 use itertools::Itertools;
 
@@ -49,14 +46,6 @@ impl PatternPalette {
         self.patterns[pattern_id.0].get_tile_type(position)
     }
 
-    pub fn get_all_ids(&self) -> Vec<PatternId> {
-        (0..self.patterns.len()).map(|i| PatternId(i)).collect_vec()
-    }
-
-    pub fn get_offset_arrays(&self, pattern_id: PatternId) -> Vec<Vec<bool>> {
-        self.patterns[pattern_id.0].get_offset_arrays()
-    }
-
     pub fn get_pattern_array<T, F>(&self, f: F) -> PatternArray<T>
     where
         F: FnMut(PatternId) -> T,
@@ -64,65 +53,7 @@ impl PatternPalette {
         PatternArray::new(self.patterns.len(), f)
     }
 
-    pub fn get_occurances(
-        &self,
-        type_flags: WorldTileTypeFlags,
-        position: [usize; 2],
-        grid_size: [usize; 2],
-    ) -> impl Iterator<Item = ([usize; 2], PatternId, [usize; 2])> {
-        // let grid_min_x = (position[0] as i32 - (self.max_size[0] as i32 - 1)).max(0) as usize;
-        // let grid_min_y = (position[1] as i32 - (self.max_size[1] as i32 - 1)).max(0) as usize;
-
-        // let grid_max_x = (position[0] as i32 + (self.max_size[0] as i32 - 1))
-        //     .min(GRID_X_SIZE as i32 - 1) as usize;
-        // let grid_max_y = (position[1] as i32 + (self.max_size[1] as i32 - 1))
-        //     .min(GRID_Y_SIZE as i32 - 1) as usize;
-
-        // (grid_min_x..grid_max_x).cartesian_product(grid_min_y..grid_max_y).map(|(grid_x, grid_y)| {
-        //     let tile = grid[grid_x][grid_y];
-        //     tile.enabled_pattern_ids().flat_map(|pattern_id| {
-        //         self.patterns[pattern_id.0].get_tile_occurances(type_flags).map(|occurrence| )
-        //     })
-        // })
-
-        self.get_type_occurances_in_patterns(type_flags).flat_map(
-            move |(pattern_id, pattern_occurance_position)| {
-                let pattern_size = self.patterns[pattern_id.0].get_size();
-                (0..pattern_size[0])
-                    .cartesian_product(0..pattern_size[1])
-                    .filter(move |(pattern_x, pattern_y)| {
-                        pattern_x != &pattern_occurance_position[0]
-                            || pattern_y != &pattern_occurance_position[1]
-                    })
-                    .map(move |(pattern_x, pattern_y)| {
-                        (
-                            [pattern_x, pattern_y],
-                            [
-                                position[0] as i32 - pattern_occurance_position[0] as i32
-                                    + pattern_x as i32,
-                                position[1] as i32 - pattern_occurance_position[1] as i32
-                                    + pattern_y as i32,
-                            ],
-                        )
-                    })
-                    .filter(move |(_, grid_pos)| {
-                        grid_pos[0] >= 0
-                            && grid_pos[0] < grid_size[0] as i32
-                            && grid_pos[1] >= 0
-                            && grid_pos[1] < grid_size[1] as i32
-                    })
-                    .map(move |(in_pattern_pos, grid_pos)| {
-                        (
-                            [grid_pos[0] as usize, grid_pos[1] as usize],
-                            pattern_id,
-                            in_pattern_pos,
-                        )
-                    })
-            },
-        )
-    }
-
-    fn get_type_occurances_in_patterns(
+    pub fn get_type_occurances_in_patterns(
         &self,
         type_flags: WorldTileTypeFlags,
     ) -> impl Iterator<Item = (PatternId, [usize; 2])> {
@@ -147,28 +78,7 @@ impl<T> PatternArray<T> {
     where
         F: FnMut(PatternId) -> T,
     {
-        let mut vec = Vec::with_capacity(size);
-        (0..size).for_each(|i| vec.push(f(PatternId(i))));
-        Self(vec)
-    }
-
-    pub fn iter(&self) -> Iter<'_, T> {
-        self.0.iter()
-    }
-
-    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
-        self.0.iter_mut()
-    }
-
-    pub fn enumerate(&self) -> impl Iterator<Item = (PatternId, &T)> {
-        self.0.iter().enumerate().map(|(id, t)| (PatternId(id), t))
-    }
-
-    pub fn enumerate_mut(&mut self) -> impl Iterator<Item = (PatternId, &mut T)> {
-        self.0
-            .iter_mut()
-            .enumerate()
-            .map(|(id, t)| (PatternId(id), t))
+        Self((0..size).map(|i| f(PatternId(i))).collect_vec())
     }
 }
 

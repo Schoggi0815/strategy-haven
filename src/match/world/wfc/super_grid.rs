@@ -1,13 +1,14 @@
 use itertools::Itertools;
 
 use crate::r#match::world::{
-    wfc::{pattern_palette::PatternPalette, super_tile::SuperTile, tile_grid::TileGrid},
+    wfc::{pattern_palette::PatternPalette, pattern_store::PatternStore, tile_grid::TileGrid},
     world_tile_type_flags::WorldTileTypeFlags,
 };
 
 pub struct SuperGrid {
-    grid: Vec<Vec<SuperTile>>,
+    grid: Vec<Vec<WorldTileTypeFlags>>,
     pattern_palette: PatternPalette,
+    pattern_store: PatternStore,
     size: [usize; 2],
 }
 
@@ -16,24 +17,24 @@ impl SuperGrid {
         let grid = (0..size[0])
             .map(|_| {
                 (0..size[1])
-                    .map(|_| SuperTile::new(&pattern_palette))
+                    .map(|_| WorldTileTypeFlags::all())
                     .collect_vec()
             })
             .collect_vec();
 
         Self {
             grid,
+            pattern_store: PatternStore::new(&pattern_palette, size),
             pattern_palette,
             size,
         }
     }
 
-    pub fn get_tile(&self, x: usize, y: usize) -> &SuperTile {
-        &self.grid[x][y]
-    }
-
     pub fn set(&mut self, x: usize, y: usize, flags: WorldTileTypeFlags) {
-        let removed_flags = self.grid[x][y].set_flag(flags, &self.pattern_palette);
+        let removed_flags = self.grid[x][y] ^ flags;
+        self.grid[x][y] = flags;
+        // self.pattern_store
+        //     .disable_patterns_from_flag([x, y], flags, &self.pattern_palette);
         self.update_patterns_around([x, y], removed_flags);
     }
 
@@ -47,15 +48,31 @@ impl SuperGrid {
 
         loop {
             while let Some((position, removed_flags)) = positions_to_recalculate.pop() {
-                let occurances =
-                    self.pattern_palette
-                        .get_occurances(removed_flags, position, self.size);
+                let occurances = self
+                    .pattern_palette
+                    .get_type_occurances_in_patterns(removed_flags);
 
-                for (grid_pos, pattern_id, offset_pos) in occurances {
-                    if self.grid[grid_pos[0]][grid_pos[1]].disable_pattern(pattern_id, offset_pos)
-                        && !updated_positions.contains(&grid_pos)
-                    {
-                        updated_positions.push(grid_pos);
+                for (pattern_id, flag_pos) in occurances {
+                    if self.pattern_store.disable_pattern(
+                        &self.pattern_palette,
+                        pattern_id,
+                        position,
+                        flag_pos,
+                    ) {
+                        let pattern_size = self.pattern_palette.get_size(&pattern_id);
+
+                        let min_x = position[0].max(flag_pos[0]) - flag_pos[0];
+                        let max_x = (position[0] + pattern_size[0] - flag_pos[0]).min(self.size[0]);
+                        let min_y = position[1].max(flag_pos[1]) - flag_pos[1];
+                        let max_y = (position[1] + pattern_size[1] - flag_pos[1]).min(self.size[1]);
+
+                        (min_x..max_x)
+                            .cartesian_product(min_y..max_y)
+                            .for_each(|(x, y)| {
+                                if !updated_positions.contains(&[x, y]) {
+                                    updated_positions.push([x, y]);
+                                }
+                            });
                     }
                 }
             }
@@ -63,10 +80,15 @@ impl SuperGrid {
             let mut done = true;
 
             for grid_pos in &updated_positions {
-                let removed_flags = self.grid[grid_pos[0]][grid_pos[1]]
-                    .recalculate_possible_flags(&self.pattern_palette);
+                let possible_flags = self.grid[grid_pos[0]][grid_pos[1]]
+                    & self
+                        .pattern_store
+                        .get_possible_flags(&self.pattern_palette, *grid_pos);
+                let removed_flags = self.grid[grid_pos[0]][grid_pos[1]] ^ possible_flags;
 
                 if removed_flags.bits().count_ones() > 0 {
+                    self.grid[grid_pos[0]][grid_pos[1]] &= possible_flags;
+
                     done = false;
                     positions_to_recalculate.push((*grid_pos, removed_flags));
                 }
@@ -90,13 +112,16 @@ impl SuperGrid {
 
             // thread::sleep(Duration::from_secs(1));
 
+            let pattern_store = &self.pattern_store;
+
             let next = self
                 .grid
                 .iter()
                 .flatten()
+                .zip(pattern_store.inverse_entropy_cache.iter().flatten())
                 .enumerate()
-                .filter(|(_, flags)| flags.get_type_count() > 1)
-                .min_by(|(_, flags_a), (_, flags_b)| flags_a.entropy().cmp(&flags_b.entropy()));
+                .filter(|(_, (flag, _))| flag.bits().count_ones() > 1)
+                .max_by(|(_, (_, a)), (_, (_, b))| a.cmp(b));
 
             let Some((index, _)) = next else {
                 break;
@@ -105,9 +130,18 @@ impl SuperGrid {
             let x = index / self.size[1];
             let y = index % self.size[1];
 
-            // println!("POP: {:?}, {:?}", x, y);
+            let random_flag = self
+                .pattern_store
+                .get_random_allowed_flag([x, y], &self.pattern_palette);
 
-            let removed_flags = self.grid[x][y].pop_random_pattern(&self.pattern_palette);
+            // println!(
+            //     "POP: {:?}, {:?}, with flag: {:?}",
+            //     pos[0], pos[1], random_flag
+            // );
+
+            let removed_flags = self.grid[x][y] ^ random_flag;
+            self.grid[x][y] = random_flag;
+
             self.update_patterns_around([x, y], removed_flags);
         }
     }
@@ -116,7 +150,7 @@ impl SuperGrid {
         let data = self
             .grid
             .iter()
-            .map(|column| column.iter().map(|tile| tile.to_tile_type()).collect_vec())
+            .map(|column| column.iter().map(|tile| tile.get_tile_type()).collect_vec())
             .collect_vec();
 
         TileGrid {

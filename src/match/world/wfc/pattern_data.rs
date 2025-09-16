@@ -49,34 +49,6 @@ impl PatternData {
         }
     }
 
-    pub fn get_type_at(&self, x: usize, y: usize) -> WorldTileType {
-        self.tiles[x][y]
-    }
-
-    pub fn pattern_fits<const X_SIZE: usize, const Y_SIZE: usize>(
-        &self,
-        grid: &[[WorldTileTypeFlags; Y_SIZE]; X_SIZE],
-        pattern_offset: [i32; 2],
-    ) -> bool {
-        for (x, y) in (0..self.size[0]).cartesian_product(0..self.size[1]) {
-            let grid_x = x as i32 + pattern_offset[0];
-            let grid_y = y as i32 + pattern_offset[1];
-
-            if grid_x < 0 || grid_x >= X_SIZE as i32 || grid_y < 0 || grid_y >= Y_SIZE as i32 {
-                continue;
-            }
-
-            let tile_type_flags = grid[grid_x as usize][grid_y as usize];
-
-            let tile_type = self.tiles[x][y];
-            if !tile_type_flags.contains(tile_type.into()) {
-                return false;
-            }
-        }
-
-        true
-    }
-
     pub fn to_grid(&self) -> TileGrid {
         TileGrid {
             data: self
@@ -94,12 +66,6 @@ impl PatternData {
 
     pub fn get_tile_type(&self, position: [usize; 2]) -> WorldTileType {
         self.tiles[position[0]][position[1]]
-    }
-
-    pub fn get_offset_arrays(&self) -> Vec<Vec<bool>> {
-        (0..self.size[0])
-            .map(|_| (0..self.size[1]).map(|_| true).collect_vec())
-            .collect_vec()
     }
 
     pub fn get_tile_occurances(

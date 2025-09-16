@@ -1,5 +1,7 @@
-pub mod main_menu;
-pub mod r#match;
+mod main_menu;
+mod r#match;
+
+use std::time::Instant;
 
 use bevy::prelude::*;
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
@@ -20,7 +22,7 @@ use crate::{
     },
 };
 
-fn main2() {
+fn main() {
     let mut reference = TileGrid::new_filled(WorldTileType::Water, [9, 11]);
     for (x, y) in (2..9).cartesian_product(4..11) {
         reference.set(x, y, WorldTileType::Beach);
@@ -49,14 +51,16 @@ fn main2() {
     //     .for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid()));
     // return;
     let pattern_palette = PatternPalette::new(patterns);
-    let mut super_grid = SuperGrid::new_empty(pattern_palette, [200, 200]);
-    super_grid.set(3, 3, WorldTileTypeFlags::Beach);
+    let mut super_grid = SuperGrid::new_empty(pattern_palette, [100, 400]);
+    super_grid.set(3, 5, WorldTileTypeFlags::Beach);
+    let now = Instant::now();
     super_grid.collapse_grid();
+    println!("Took {} ms to collapse grid.", now.elapsed().as_millis());
     let new_grid = super_grid.to_tile_grid();
     println!("{}", new_grid);
 }
 
-fn main() {
+fn main2() {
     App::new()
         .add_plugins((
             DefaultPlugins,

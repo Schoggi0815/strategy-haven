@@ -1,6 +1,5 @@
 pub mod pattern_data;
-pub mod pattern_overlap;
 pub mod pattern_palette;
+pub mod pattern_store;
 pub mod super_grid;
-pub mod super_tile;
 pub mod tile_grid;
