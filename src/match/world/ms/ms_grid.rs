@@ -35,6 +35,7 @@ impl MSGrid {
 
             for y in 0..=tile_grid.grid_size[1] - pattern_size_y {
                 let pattern = Pattern {
+                    size: [pattern_size_x, pattern_size_y],
                     tiles: tile_grid
                         .data
                         .iter()
@@ -90,6 +91,14 @@ impl MSGrid {
             }
         }
 
+        // pattern_collection.add_rotations(&mut constraint_collection);
+        // pattern_collection.add_flips(&mut constraint_collection);
+
+        // for (id, pattern) in pattern_collection.patterns.iter().enumerate() {
+        //     println!("Pattern with id {}:", id);
+        //     println!("{}", pattern.get_grid());
+        // }
+
         let grid = (0..grid_x_size)
             .map(|_| {
                 (0..grid_y_size)
@@ -109,6 +118,9 @@ impl MSGrid {
     pub fn collapse_grid(&mut self) {
         for x in 0..self.grid_size[0] {
             for y in 0..self.grid_size[1] {
+                println!("Step x: {}, y: {}", x, y);
+                println!("{}", self.to_tile_grid());
+
                 let possible_states = &self.super_grid[x][y];
 
                 let random_state = possible_states[rand::random_range(0..possible_states.len())];
@@ -213,7 +225,7 @@ impl MSGrid {
                     }
 
                     if constraint_direction != ConstraintDirection::Bottom
-                        && target[1] > self.grid_size[1] - 1
+                        && target[1] < self.grid_size[1] - 1
                     {
                         worklist.push((
                             target,

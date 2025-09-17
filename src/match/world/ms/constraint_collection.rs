@@ -1,20 +1,20 @@
+use rustc_hash::FxHashSet;
+
 use crate::r#match::world::ms::constraint::Constraint;
 
 pub struct ConstraintCollection {
-    constraints: Vec<Constraint>,
+    pub constraints: FxHashSet<Constraint>,
 }
 
 impl ConstraintCollection {
     pub fn new() -> Self {
         Self {
-            constraints: Vec::new(),
+            constraints: FxHashSet::default(),
         }
     }
 
     pub fn add(&mut self, constraint: Constraint) {
-        if !self.constraints.contains(&constraint) {
-            self.constraints.push(constraint);
-        }
+        self.constraints.insert(constraint);
     }
 
     pub fn exists(&self, constraint: &Constraint) -> bool {

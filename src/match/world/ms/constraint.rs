@@ -1,11 +1,11 @@
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Hash)]
 pub struct Constraint {
     pub pattern_a_id: usize,
     pub pattern_b_id: usize,
     pub direction: ConstraintDirection,
 }
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub enum ConstraintDirection {
     Top,
     Right,
