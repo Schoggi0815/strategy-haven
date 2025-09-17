@@ -71,6 +71,12 @@ fn spawn_tiles(
     let mountain_material = materials.add(StandardMaterial::from_color(
         WorldTileType::Mountain.get_color(),
     ));
+    let empty_material = materials.add(StandardMaterial::from_color(
+        WorldTileType::Empty.get_color(),
+    ));
+    let uncertain_material = materials.add(StandardMaterial::from_color(
+        WorldTileType::Uncertain.get_color(),
+    ));
 
     for x in 0..100 {
         for y in 0..100 {
@@ -85,6 +91,8 @@ fn spawn_tiles(
                     WorldTileType::Forest => forest_material.clone(),
                     WorldTileType::Mountain => mountain_material.clone(),
                     WorldTileType::Beach => beach_material.clone(),
+                    WorldTileType::Empty => empty_material.clone(),
+                    WorldTileType::Uncertain => uncertain_material.clone(),
                 }),
                 Transform::from_xyz(x as f32, 0., y as f32),
             ));

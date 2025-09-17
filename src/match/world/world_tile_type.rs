@@ -8,6 +8,8 @@ pub enum WorldTileType {
     Forest,
     Mountain,
     Beach,
+    Empty,
+    Uncertain,
 }
 
 impl WorldTileType {
@@ -16,8 +18,10 @@ impl WorldTileType {
             WorldTileType::Water => Color::linear_rgb(0., 0., 1.),
             WorldTileType::Field => Color::linear_rgb(0., 1., 0.),
             WorldTileType::Forest => Color::linear_rgb(0.25, 0.75, 0.),
-            WorldTileType::Mountain => Color::linear_rgb(0.5, 0.5, 0.5),
+            WorldTileType::Mountain => Color::linear_rgb(0.75, 0.75, 0.75),
             WorldTileType::Beach => Color::linear_rgb(0.75, 0.75, 0.),
+            WorldTileType::Empty => Color::linear_rgb(1., 0., 0.),
+            WorldTileType::Uncertain => Color::linear_rgb(0.1, 0.1, 0.1),
         }
     }
 
@@ -28,6 +32,8 @@ impl WorldTileType {
             WorldTileType::Forest => "Forst",
             WorldTileType::Mountain => "Mount",
             WorldTileType::Beach => "Beach",
+            WorldTileType::Empty => "Empty",
+            WorldTileType::Uncertain => "Uncer",
         }
     }
 }

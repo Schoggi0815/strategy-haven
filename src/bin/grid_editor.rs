@@ -63,7 +63,7 @@ fn setup(mut commands: Commands, editor_resource: Res<EditorResource>) {
 
         let mut grid: TileGrid = ron::from_str(&ron_string).expect("Could not parse file.");
 
-        grid.resize([20, 20]);
+        grid.resize([30, 30]);
 
         commands.spawn(GridComponent { grid });
     } else {
@@ -164,6 +164,7 @@ fn reset_grid(
                     WorldTileType::Forest => forest_material.clone(),
                     WorldTileType::Mountain => mountain_material.clone(),
                     WorldTileType::Beach => beach_material.clone(),
+                    _ => beach_material.clone(),
                 }),
                 Transform::from_xyz(x as f32, 0., y as f32),
                 GridEntity { pos: [x, y] },

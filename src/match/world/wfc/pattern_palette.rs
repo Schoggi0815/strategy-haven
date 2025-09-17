@@ -46,6 +46,10 @@ impl PatternPalette {
         self.patterns[pattern_id.0].get_tile_type(position)
     }
 
+    pub fn get_pattern_occurrence_count(&self, pattern_id: &PatternId) -> u32 {
+        self.patterns[pattern_id.0].occurrence_count
+    }
+
     pub fn get_pattern_array<T, F>(&self, f: F) -> PatternArray<T>
     where
         F: FnMut(PatternId) -> T,

@@ -55,7 +55,7 @@ impl TileGrid {
                     })
                     .collect_vec();
 
-                let pattern = PatternData::new(pattern_array, [P_SIZE_X, P_SIZE_Y]);
+                let pattern = PatternData::new(pattern_array, [P_SIZE_X, P_SIZE_Y], 1);
                 let pattern_rot1 = pattern.rotation();
                 let pattern_rot2 = pattern_rot1.rotation();
                 let pattern_rot3 = pattern_rot2.rotation();
@@ -70,9 +70,21 @@ impl TileGrid {
                     pattern_rot3,
                 ]
             })
-            .sorted()
-            .dedup()
-            .collect_vec();
+            .sorted_by(|a, b| a.tiles.cmp(&b.tiles))
+            .fold(Vec::new(), |mut acc, current| {
+                let Some(last) = acc.last_mut() else {
+                    acc.push(current);
+                    return acc;
+                };
+
+                if current.tiles != last.tiles {
+                    acc.push(current);
+                    return acc;
+                }
+
+                last.occurrence_count += 1;
+                acc
+            });
 
         all
     }
@@ -80,7 +92,17 @@ impl TileGrid {
 
 impl Display for TileGrid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:<4}", "")?;
+
+        for x in 0..self.grid_size[0] {
+            write!(f, "{:<6}", x)?;
+        }
+
+        writeln!(f)?;
+
         for y in 0..self.grid_size[1] {
+            write!(f, "{:<4}", y)?;
+
             for x in 0..self.grid_size[0] {
                 let tile = self.data[x][y];
 

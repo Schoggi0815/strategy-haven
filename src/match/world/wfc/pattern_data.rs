@@ -5,15 +5,20 @@ use crate::r#match::world::{
     world_tile_type_flags::WorldTileTypeFlags,
 };
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, PartialOrd, Eq, Ord)]
 pub struct PatternData {
     size: [usize; 2],
-    tiles: Vec<Vec<WorldTileType>>,
+    pub tiles: Vec<Vec<WorldTileType>>,
+    pub occurrence_count: u32,
 }
 
 impl PatternData {
-    pub fn new(tiles: Vec<Vec<WorldTileType>>, size: [usize; 2]) -> Self {
-        Self { tiles, size }
+    pub fn new(tiles: Vec<Vec<WorldTileType>>, size: [usize; 2], occurrence_count: u32) -> Self {
+        Self {
+            tiles,
+            size,
+            occurrence_count,
+        }
     }
 
     pub fn rotation(&self) -> PatternData {
@@ -30,6 +35,7 @@ impl PatternData {
         PatternData {
             tiles,
             size: new_size,
+            occurrence_count: self.occurrence_count,
         }
     }
 
@@ -46,6 +52,7 @@ impl PatternData {
         PatternData {
             tiles,
             size: self.size,
+            occurrence_count: self.occurrence_count,
         }
     }
 

@@ -1,4 +1,4 @@
-use itertools::Itertools;
+use itertools::{FoldWhile, Itertools};
 
 use crate::r#match::world::{
     wfc::pattern_palette::{PatternArray, PatternId, PatternPalette},
@@ -95,7 +95,26 @@ impl PatternStore {
             })
             .collect_vec();
 
-        let random = enableds[rand::random_range(0..enableds.len())];
+        let total_occurrence_count = enableds.iter().fold(0, |acc, current| {
+            acc + palette.get_pattern_occurrence_count(&current.0)
+        });
+
+        let random_occurrence = rand::random_range(0..total_occurrence_count);
+
+        let random = enableds
+            .iter()
+            .fold_while((0, None), |acc, current| {
+                let new_count = acc.0 + palette.get_pattern_occurrence_count(&current.0);
+                if new_count > random_occurrence {
+                    FoldWhile::Done((new_count, Some(current)))
+                } else {
+                    FoldWhile::Continue((new_count, Some(current)))
+                }
+            })
+            .into_inner()
+            .1
+            .unwrap();
+
         return palette.get_tile_type(&random.0, random.1).into();
     }
 

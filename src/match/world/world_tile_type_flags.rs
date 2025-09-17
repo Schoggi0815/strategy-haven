@@ -23,9 +23,9 @@ impl WorldTileTypeFlags {
             WorldTileTypeFlags::Beach => WorldTileType::Beach,
             flags => {
                 if flags == WorldTileTypeFlags::empty() {
-                    WorldTileType::Forest
+                    WorldTileType::Empty
                 } else {
-                    WorldTileType::Mountain
+                    WorldTileType::Uncertain
                 }
             }
         }
@@ -86,6 +86,8 @@ impl From<WorldTileType> for WorldTileTypeFlags {
             WorldTileType::Forest => Self::Forest,
             WorldTileType::Mountain => Self::Mountain,
             WorldTileType::Beach => Self::Beach,
+            WorldTileType::Empty => Self::empty(),
+            WorldTileType::Uncertain => Self::all(),
         }
     }
 }

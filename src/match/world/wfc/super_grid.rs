@@ -94,6 +94,9 @@ impl SuperGrid {
                 }
             }
 
+            // println!("Updated positions!");
+            // println!("{}", self.to_tile_grid());
+
             if done {
                 break;
             }
@@ -109,8 +112,6 @@ impl SuperGrid {
             // println!("Step {}:", step_count);
             // println!("{}", self.to_tile_grid());
             // step_count += 1;
-
-            // thread::sleep(Duration::from_secs(1));
 
             let pattern_store = &self.pattern_store;
 
@@ -134,10 +135,7 @@ impl SuperGrid {
                 .pattern_store
                 .get_random_allowed_flag([x, y], &self.pattern_palette);
 
-            // println!(
-            //     "POP: {:?}, {:?}, with flag: {:?}",
-            //     pos[0], pos[1], random_flag
-            // );
+            // println!("POP: {:?}, {:?}, with flag: {:?}", x, y, random_flag);
 
             let removed_flags = self.grid[x][y] ^ random_flag;
             self.grid[x][y] = random_flag;
