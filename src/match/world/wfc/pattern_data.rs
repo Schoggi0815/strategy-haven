@@ -1,8 +1,7 @@
 use itertools::Itertools;
 
 use crate::r#match::world::{
-    wfc::tile_grid::TileGrid, world_tile_type::WorldTileType,
-    world_tile_type_flags::WorldTileTypeFlags,
+    tile_grid::TileGrid, world_tile_type::WorldTileType, world_tile_type_flags::WorldTileTypeFlags,
 };
 
 #[derive(PartialEq, PartialOrd, Eq, Ord)]

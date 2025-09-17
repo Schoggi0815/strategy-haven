@@ -1,9 +1,9 @@
 use std::fs::File;
 use std::io::Read;
 
+use crate::r#match::world::tile_grid::TileGrid;
 use crate::r#match::world::wfc::pattern_palette::PatternPalette;
 use crate::r#match::world::wfc::super_grid::SuperGrid;
-use crate::r#match::world::wfc::tile_grid::TileGrid;
 use crate::r#match::world::{
     global_chances_resource::GlobalChancesResource, wfc_tile::WfcTile, world_state::WorldState,
     world_tile_position::WorldTilePosition, world_tile_type::WorldTileType,

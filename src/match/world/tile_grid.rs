@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::r#match::world::{wfc::pattern_data::PatternData, world_tile_type::WorldTileType};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TileGrid {
     pub data: Vec<Vec<WorldTileType>>,
     pub grid_size: [usize; 2],
@@ -87,6 +87,44 @@ impl TileGrid {
             });
 
         all
+    }
+
+    pub fn chain_below(&self, chain: Self) -> Self {
+        let new_size = [self.grid_size[0], self.grid_size[1] + chain.grid_size[1]];
+
+        let new_grid = self
+            .data
+            .iter()
+            .enumerate()
+            .map(|(x, column)| {
+                column
+                    .iter()
+                    .chain(chain.data[x].iter())
+                    .cloned()
+                    .collect_vec()
+            })
+            .collect_vec();
+
+        Self {
+            data: new_grid,
+            grid_size: new_size,
+        }
+    }
+
+    pub fn chain_right(&self, chain: Self) -> Self {
+        let new_size = [self.grid_size[0] + chain.grid_size[0], self.grid_size[1]];
+
+        let new_grid = self
+            .data
+            .iter()
+            .chain(chain.data.iter())
+            .cloned()
+            .collect_vec();
+
+        Self {
+            data: new_grid,
+            grid_size: new_size,
+        }
     }
 }
 

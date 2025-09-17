@@ -1,7 +1,8 @@
 use std::{fs::File, io::Read, time::Instant};
 
 use strategy_haven::r#match::world::{
-    wfc::{pattern_palette::PatternPalette, super_grid::SuperGrid, tile_grid::TileGrid},
+    tile_grid::TileGrid,
+    wfc::{pattern_palette::PatternPalette, super_grid::SuperGrid},
     world_tile_type_flags::WorldTileTypeFlags,
 };
 

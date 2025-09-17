@@ -1,4 +1,6 @@
 pub mod global_chances_resource;
+pub mod ms;
+pub mod tile_grid;
 pub mod wfc;
 pub mod wfc_tile;
 pub mod world_plugin;

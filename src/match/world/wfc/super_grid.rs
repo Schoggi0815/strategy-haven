@@ -1,7 +1,8 @@
 use itertools::Itertools;
 
 use crate::r#match::world::{
-    wfc::{pattern_palette::PatternPalette, pattern_store::PatternStore, tile_grid::TileGrid},
+    tile_grid::TileGrid,
+    wfc::{pattern_palette::PatternPalette, pattern_store::PatternStore},
     world_tile_type_flags::WorldTileTypeFlags,
 };
 
