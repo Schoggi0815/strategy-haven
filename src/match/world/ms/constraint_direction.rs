@@ -1,9 +1,4 @@
-#[derive(PartialEq, Eq, Hash)]
-pub struct Constraint {
-    pub pattern_a_id: usize,
-    pub pattern_b_id: usize,
-    pub direction: ConstraintDirection,
-}
+pub const LAST_CONSTRAINT_DIRECTION: ConstraintDirection = ConstraintDirection::BottomRight;
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub enum ConstraintDirection {
@@ -54,6 +49,22 @@ impl ConstraintDirection {
             ConstraintDirection::TopRight => ConstraintDirection::BottomRight,
             ConstraintDirection::BottomLeft => ConstraintDirection::TopLeft,
             ConstraintDirection::BottomRight => ConstraintDirection::TopRight,
+        }
+    }
+}
+
+impl From<usize> for ConstraintDirection {
+    fn from(value: usize) -> Self {
+        match value {
+            0 => ConstraintDirection::Top,
+            1 => ConstraintDirection::Right,
+            2 => ConstraintDirection::Bottom,
+            3 => ConstraintDirection::Left,
+            4 => ConstraintDirection::TopLeft,
+            5 => ConstraintDirection::TopRight,
+            6 => ConstraintDirection::BottomLeft,
+            7 => ConstraintDirection::BottomRight,
+            _ => ConstraintDirection::Bottom,
         }
     }
 }

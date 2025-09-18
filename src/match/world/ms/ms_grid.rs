@@ -2,8 +2,7 @@ use itertools::{FoldWhile, Itertools};
 
 use crate::r#match::world::{
     ms::{
-        constraint::{Constraint, ConstraintDirection},
-        constraint_collection::ConstraintCollection,
+        constraint_direction::{ConstraintDirection, LAST_CONSTRAINT_DIRECTION},
         pattern::Pattern,
         pattern_collection::PatternCollection,
     },
@@ -12,8 +11,7 @@ use crate::r#match::world::{
 
 pub struct MSGrid {
     pattern_collection: PatternCollection,
-    constraint_collection: ConstraintCollection,
-    super_grid: Vec<Vec<Vec<usize>>>,
+    support_count_grid: Vec<Vec<Vec<Vec<usize>>>>,
     grid_size: [usize; 2],
 }
 
@@ -26,7 +24,6 @@ impl MSGrid {
         grid_y_size: usize,
     ) -> Self {
         let mut pattern_collection = PatternCollection::new();
-        let mut constraint_collection = ConstraintCollection::new();
 
         let mut pattern_ids = Vec::new();
 
@@ -56,95 +53,93 @@ impl MSGrid {
                 pattern_ids[x].push(pattern_id);
 
                 if x > 2 {
-                    let left_constraint = Constraint {
-                        direction: ConstraintDirection::Left,
-                        pattern_a_id: pattern_id,
-                        pattern_b_id: pattern_ids[x - 3][y],
-                    };
+                    pattern_collection.add_support(
+                        pattern_id,
+                        ConstraintDirection::Left,
+                        pattern_ids[x - 3][y],
+                    );
 
-                    let right_constraint = Constraint {
-                        direction: ConstraintDirection::Right,
-                        pattern_a_id: pattern_ids[x - 3][y],
-                        pattern_b_id: pattern_id,
-                    };
-
-                    constraint_collection.add(left_constraint);
-                    constraint_collection.add(right_constraint);
+                    pattern_collection.add_support(
+                        pattern_ids[x - 3][y],
+                        ConstraintDirection::Right,
+                        pattern_id,
+                    );
 
                     if y > 2 {
-                        let top_left_constraint = Constraint {
-                            direction: ConstraintDirection::TopLeft,
-                            pattern_a_id: pattern_id,
-                            pattern_b_id: pattern_ids[x - 3][y - 3],
-                        };
+                        pattern_collection.add_support(
+                            pattern_id,
+                            ConstraintDirection::TopLeft,
+                            pattern_ids[x - 3][y - 3],
+                        );
 
-                        let bottom_right_constraint = Constraint {
-                            direction: ConstraintDirection::BottomRight,
-                            pattern_a_id: pattern_ids[x - 3][y - 3],
-                            pattern_b_id: pattern_id,
-                        };
-
-                        constraint_collection.add(top_left_constraint);
-                        constraint_collection.add(bottom_right_constraint);
+                        pattern_collection.add_support(
+                            pattern_ids[x - 3][y - 3],
+                            ConstraintDirection::BottomRight,
+                            pattern_id,
+                        );
                     }
 
                     if y < tile_grid.grid_size[1] - pattern_size_y - 2 {
-                        let bottom_left_constraint = Constraint {
-                            direction: ConstraintDirection::BottomLeft,
-                            pattern_a_id: pattern_id,
-                            pattern_b_id: pattern_ids[x - 3][y + 3],
-                        };
+                        pattern_collection.add_support(
+                            pattern_id,
+                            ConstraintDirection::BottomLeft,
+                            pattern_ids[x - 3][y + 3],
+                        );
 
-                        let top_right_constraint = Constraint {
-                            direction: ConstraintDirection::TopRight,
-                            pattern_a_id: pattern_ids[x - 3][y + 3],
-                            pattern_b_id: pattern_id,
-                        };
-
-                        constraint_collection.add(bottom_left_constraint);
-                        constraint_collection.add(top_right_constraint);
+                        pattern_collection.add_support(
+                            pattern_ids[x - 3][y + 3],
+                            ConstraintDirection::TopRight,
+                            pattern_id,
+                        );
                     }
                 }
 
                 if y > 2 {
-                    let top_constraint = Constraint {
-                        direction: ConstraintDirection::Top,
-                        pattern_a_id: pattern_id,
-                        pattern_b_id: pattern_ids[x][y - 3],
-                    };
+                    pattern_collection.add_support(
+                        pattern_id,
+                        ConstraintDirection::Top,
+                        pattern_ids[x][y - 3],
+                    );
 
-                    let bottom_constraint = Constraint {
-                        direction: ConstraintDirection::Bottom,
-                        pattern_a_id: pattern_ids[x][y - 3],
-                        pattern_b_id: pattern_id,
-                    };
-
-                    constraint_collection.add(top_constraint);
-                    constraint_collection.add(bottom_constraint);
+                    pattern_collection.add_support(
+                        pattern_ids[x][y - 3],
+                        ConstraintDirection::Bottom,
+                        pattern_id,
+                    );
                 }
             }
         }
 
-        pattern_collection.add_rotations(&mut constraint_collection);
-        pattern_collection.add_flips(&mut constraint_collection);
+        pattern_collection.add_rotations();
+        pattern_collection.add_flips();
 
         // for (id, pattern) in pattern_collection.patterns.iter().enumerate() {
         //     println!("Pattern with id {}:", id);
         //     println!("{}", pattern.get_grid());
         // }
 
-        let grid = (0..grid_x_size)
+        let pattern_supports = pattern_collection
+            .pattern_supports
+            .iter()
+            .map(|directions| {
+                directions
+                    .iter()
+                    .map(|other_patterns| other_patterns.len())
+                    .collect_vec()
+            })
+            .collect_vec();
+
+        let support_count_grid = (0..grid_x_size)
             .map(|_| {
                 (0..grid_y_size)
-                    .map(|_| pattern_collection.get_all_ids().collect_vec())
+                    .map(|_| pattern_supports.clone())
                     .collect_vec()
             })
             .collect_vec();
 
         Self {
             pattern_collection,
-            constraint_collection,
-            super_grid: grid,
+            support_count_grid,
             grid_size: [grid_x_size, grid_y_size],
         }
     }
@@ -152,8 +147,8 @@ impl MSGrid {
     pub fn collapse_grid(&mut self) {
         const SUBSET_SIZE: usize = 5;
 
-        for x in 0..self.grid_size[0] / SUBSET_SIZE {
-            for y in 0..self.grid_size[1] / SUBSET_SIZE {
+        for x in 0..=self.grid_size[0] / SUBSET_SIZE {
+            for y in 0..=self.grid_size[1] / SUBSET_SIZE {
                 let offset = [x * SUBSET_SIZE, y * SUBSET_SIZE];
                 let size = [
                     SUBSET_SIZE.min(self.grid_size[0] - (x * SUBSET_SIZE)),
@@ -163,7 +158,7 @@ impl MSGrid {
                 let mut result = false;
                 let mut fail_count = 0;
 
-                let before_state = self.super_grid.clone();
+                let before_state = self.support_count_grid.clone();
 
                 while !result {
                     result = self.collapse_subset(offset, size);
@@ -172,9 +167,9 @@ impl MSGrid {
                         println!("Subset at [{}, {}] failed!", x, y);
 
                         fail_count += 1;
-                        self.super_grid = before_state.clone();
+                        self.support_count_grid = before_state.clone();
 
-                        if fail_count >= 20 {
+                        if fail_count >= 100 {
                             println!("Failed to generate subset {} times, exiting", fail_count);
                             return;
                         }
@@ -187,7 +182,16 @@ impl MSGrid {
     pub fn collapse_subset(&mut self, offset: [usize; 2], subset_size: [usize; 2]) -> bool {
         for x in offset[0]..offset[0] + subset_size[0] {
             for y in offset[1]..offset[1] + subset_size[1] {
-                let possible_states = &self.super_grid[x][y];
+                let possible_states = &self.support_count_grid[x][y]
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, direction_counts)| direction_counts.iter().all(|count| *count > 0))
+                    .map(|(id, _)| id)
+                    .collect_vec();
+
+                if possible_states.len() == 1 {
+                    continue;
+                }
 
                 let counts = possible_states
                     .iter()
@@ -210,12 +214,33 @@ impl MSGrid {
                     })
                     .into_inner();
 
-                let random_state = possible_states[random_state];
+                let random_state = possible_states[rand::random_range(0..possible_states.len())];
 
-                self.super_grid[x][y] = vec![random_state];
-                if !self.propagate_change_from(x, y) {
+                println!("Popped pattern for {}, {}:", x, y);
+                println!("{}", self.pattern_collection.get(random_state).get_grid());
+
+                let removed_states = possible_states
+                    .iter()
+                    .filter(|state| **state != random_state)
+                    .cloned()
+                    .collect_vec();
+
+                self.support_count_grid[x][y]
+                    .iter_mut()
+                    .enumerate()
+                    .filter(|(pattern_id, _)| *pattern_id != random_state)
+                    .for_each(|(_, direcion_counts)| {
+                        *direcion_counts = (0..=LAST_CONSTRAINT_DIRECTION as usize)
+                            .map(|_| 0)
+                            .collect_vec();
+                    });
+
+                if !self.propagate_change_from_ac4(x, y, removed_states) {
                     return false;
                 }
+
+                println!("Step {}, {}:", x, y);
+                println!("{}", self.to_tile_grid());
             }
         }
 
@@ -223,11 +248,20 @@ impl MSGrid {
     }
 
     pub fn to_tile_grid(&self) -> TileGrid {
-        let pattern_grids = self.super_grid.iter().map(|column| {
-            column
-                .iter()
-                .map(|states| self.pattern_collection.get(states[0]).get_grid())
+        let pattern_id_grid = self.support_count_grid.iter().map(|column| {
+            column.iter().map(|pattern_id_counts| {
+                pattern_id_counts
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, direction_counts)| direction_counts.iter().all(|count| *count > 0))
+                    .nth(0)
+                    .unwrap()
+                    .0
+            })
         });
+
+        let pattern_grids = pattern_id_grid
+            .map(|column| column.map(|state| self.pattern_collection.get(state).get_grid()));
 
         pattern_grids
             .map(|column| {
@@ -239,200 +273,296 @@ impl MSGrid {
             .unwrap()
     }
 
-    fn propagate_change_from(&mut self, origin_x: usize, origin_y: usize) -> bool {
-        let mut worklist = Vec::new();
+    fn propagate_change_from_ac4(
+        &mut self,
+        origin_x: usize,
+        origin_y: usize,
+        removed_states: Vec<usize>,
+    ) -> bool {
+        let mut inconcistencies = removed_states
+            .iter()
+            .map(|state| ([origin_x, origin_y], *state))
+            .collect_vec();
+
+        while let Some((pos, removed_pattern_id)) = inconcistencies.pop() {
+            for (neighbour_pos, neighbour_direction) in self.get_neigbours(pos[0], pos[1]) {
+                for affected_pattern_id in self.pattern_collection.pattern_supports
+                    [removed_pattern_id][neighbour_direction.reverse() as usize]
+                    .iter()
+                {
+                    if self.support_count_grid[neighbour_pos[0]][neighbour_pos[1]]
+                        [*affected_pattern_id]
+                        .iter()
+                        .any(|count| *count == 0)
+                    {
+                        continue;
+                    }
+
+                    self.support_count_grid[neighbour_pos[0]][neighbour_pos[1]]
+                        [*affected_pattern_id][neighbour_direction as usize] -= 1;
+
+                    if self.support_count_grid[neighbour_pos[0]][neighbour_pos[1]]
+                        [*affected_pattern_id][neighbour_direction as usize]
+                        == 0
+                    {
+                        if !self.support_count_grid[neighbour_pos[0]][neighbour_pos[1]]
+                            .iter()
+                            .any(|direction_counts| direction_counts.iter().all(|count| *count > 0))
+                        {
+                            return false;
+                        }
+
+                        inconcistencies.push((neighbour_pos, *affected_pattern_id));
+                    }
+                }
+            }
+        }
+
+        true
+    }
+
+    fn get_neigbours(
+        &self,
+        origin_x: usize,
+        origin_y: usize,
+    ) -> Vec<([usize; 2], ConstraintDirection)> {
+        let mut constraints = Vec::new();
 
         if origin_x > 0 {
-            worklist.push((
-                [origin_x, origin_y],
-                [origin_x - 1, origin_y],
-                ConstraintDirection::Right,
-            ));
+            constraints.push(([origin_x - 1, origin_y], ConstraintDirection::Right));
 
             if origin_y > 0 {
-                worklist.push((
-                    [origin_x, origin_y],
+                constraints.push((
                     [origin_x - 1, origin_y - 1],
                     ConstraintDirection::BottomRight,
                 ));
             }
 
             if origin_y < self.grid_size[1] - 1 {
-                worklist.push((
-                    [origin_x, origin_y],
-                    [origin_x - 1, origin_y + 1],
-                    ConstraintDirection::TopRight,
-                ));
+                constraints.push(([origin_x - 1, origin_y + 1], ConstraintDirection::TopRight));
             }
         }
 
         if origin_x < self.grid_size[0] - 1 {
-            worklist.push((
-                [origin_x, origin_y],
-                [origin_x + 1, origin_y],
-                ConstraintDirection::Left,
-            ));
+            constraints.push(([origin_x + 1, origin_y], ConstraintDirection::Left));
 
             if origin_y > 0 {
-                worklist.push((
-                    [origin_x, origin_y],
+                constraints.push((
                     [origin_x + 1, origin_y - 1],
                     ConstraintDirection::BottomLeft,
                 ));
             }
 
             if origin_y < self.grid_size[1] - 1 {
-                worklist.push((
-                    [origin_x, origin_y],
-                    [origin_x + 1, origin_y + 1],
-                    ConstraintDirection::TopLeft,
-                ));
+                constraints.push(([origin_x + 1, origin_y + 1], ConstraintDirection::TopLeft));
             }
         }
 
         if origin_y > 0 {
-            worklist.push((
-                [origin_x, origin_y],
-                [origin_x, origin_y - 1],
-                ConstraintDirection::Bottom,
-            ));
+            constraints.push(([origin_x, origin_y - 1], ConstraintDirection::Bottom));
         }
 
         if origin_y < self.grid_size[1] - 1 {
-            worklist.push((
-                [origin_x, origin_y],
-                [origin_x, origin_y + 1],
-                ConstraintDirection::Top,
-            ));
+            constraints.push(([origin_x, origin_y + 1], ConstraintDirection::Top));
         }
 
-        while let Some((origin, target, constraint_direction)) = worklist.pop() {
-            let patterns = &self.super_grid[target[0]][target[1]];
-
-            let mut new_valids = Vec::new();
-            let mut added_directions = Vec::new();
-
-            for pattern_id in patterns {
-                let origin_ids = &self.super_grid[origin[0]][origin[1]];
-
-                if !origin_ids.iter().any(|other_id| {
-                    self.constraint_collection.exists(&Constraint {
-                        pattern_a_id: *pattern_id,
-                        pattern_b_id: *other_id,
-                        direction: constraint_direction,
-                    })
-                }) {
-                    if constraint_direction != ConstraintDirection::Left
-                        && target[0] > 0
-                        && !added_directions.contains(&ConstraintDirection::Right)
-                    {
-                        worklist.push((
-                            target,
-                            [target[0] - 1, target[1]],
-                            ConstraintDirection::Right,
-                        ));
-                        added_directions.push(ConstraintDirection::Right);
-                    }
-
-                    if constraint_direction != ConstraintDirection::Right
-                        && target[0] < self.grid_size[0] - 1
-                        && !added_directions.contains(&ConstraintDirection::Left)
-                    {
-                        worklist.push((
-                            target,
-                            [target[0] + 1, target[1]],
-                            ConstraintDirection::Left,
-                        ));
-                        added_directions.push(ConstraintDirection::Left);
-                    }
-
-                    if constraint_direction != ConstraintDirection::Top
-                        && target[1] > 0
-                        && !added_directions.contains(&ConstraintDirection::Bottom)
-                    {
-                        worklist.push((
-                            target,
-                            [target[0], target[1] - 1],
-                            ConstraintDirection::Bottom,
-                        ));
-                        added_directions.push(ConstraintDirection::Bottom);
-                    }
-
-                    if constraint_direction != ConstraintDirection::Bottom
-                        && target[1] < self.grid_size[1] - 1
-                        && !added_directions.contains(&ConstraintDirection::Top)
-                    {
-                        worklist.push((
-                            target,
-                            [target[0], target[1] + 1],
-                            ConstraintDirection::Top,
-                        ));
-                        added_directions.push(ConstraintDirection::Top);
-                    }
-
-                    if constraint_direction != ConstraintDirection::TopLeft
-                        && target[0] > 0
-                        && target[1] > 0
-                        && !added_directions.contains(&ConstraintDirection::BottomRight)
-                    {
-                        worklist.push((
-                            target,
-                            [target[0] - 1, target[1] - 1],
-                            ConstraintDirection::BottomRight,
-                        ));
-                        added_directions.push(ConstraintDirection::BottomRight);
-                    }
-
-                    if constraint_direction != ConstraintDirection::TopRight
-                        && target[0] < self.grid_size[0] - 1
-                        && target[1] > 0
-                        && !added_directions.contains(&ConstraintDirection::BottomLeft)
-                    {
-                        worklist.push((
-                            target,
-                            [target[0] + 1, target[1] - 1],
-                            ConstraintDirection::BottomLeft,
-                        ));
-                        added_directions.push(ConstraintDirection::BottomLeft);
-                    }
-
-                    if constraint_direction != ConstraintDirection::BottomLeft
-                        && target[0] > 0
-                        && target[1] < self.grid_size[1] - 1
-                        && !added_directions.contains(&ConstraintDirection::TopRight)
-                    {
-                        worklist.push((
-                            target,
-                            [target[0] - 1, target[1] + 1],
-                            ConstraintDirection::TopRight,
-                        ));
-                        added_directions.push(ConstraintDirection::TopRight);
-                    }
-
-                    if constraint_direction != ConstraintDirection::BottomRight
-                        && target[0] < self.grid_size[0] - 1
-                        && target[1] < self.grid_size[1] - 1
-                        && !added_directions.contains(&ConstraintDirection::TopLeft)
-                    {
-                        worklist.push((
-                            target,
-                            [target[0] + 1, target[1] + 1],
-                            ConstraintDirection::TopLeft,
-                        ));
-                        added_directions.push(ConstraintDirection::TopLeft);
-                    }
-                } else {
-                    new_valids.push(*pattern_id);
-                }
-            }
-
-            if new_valids.len() == 0 {
-                return false;
-            }
-
-            self.super_grid[target[0]][target[1]] = new_valids;
-        }
-
-        true
+        constraints
     }
+
+    // fn propagate_change_from(&mut self, origin_x: usize, origin_y: usize) -> bool {
+    //     let mut worklist = Vec::new();
+
+    //     if origin_x > 0 {
+    //         worklist.push((
+    //             [origin_x, origin_y],
+    //             [origin_x - 1, origin_y],
+    //             ConstraintDirection::Right,
+    //         ));
+
+    //         if origin_y > 0 {
+    //             worklist.push((
+    //                 [origin_x, origin_y],
+    //                 [origin_x - 1, origin_y - 1],
+    //                 ConstraintDirection::BottomRight,
+    //             ));
+    //         }
+
+    //         if origin_y < self.grid_size[1] - 1 {
+    //             worklist.push((
+    //                 [origin_x, origin_y],
+    //                 [origin_x - 1, origin_y + 1],
+    //                 ConstraintDirection::TopRight,
+    //             ));
+    //         }
+    //     }
+
+    //     if origin_x < self.grid_size[0] - 1 {
+    //         worklist.push((
+    //             [origin_x, origin_y],
+    //             [origin_x + 1, origin_y],
+    //             ConstraintDirection::Left,
+    //         ));
+
+    //         if origin_y > 0 {
+    //             worklist.push((
+    //                 [origin_x, origin_y],
+    //                 [origin_x + 1, origin_y - 1],
+    //                 ConstraintDirection::BottomLeft,
+    //             ));
+    //         }
+
+    //         if origin_y < self.grid_size[1] - 1 {
+    //             worklist.push((
+    //                 [origin_x, origin_y],
+    //                 [origin_x + 1, origin_y + 1],
+    //                 ConstraintDirection::TopLeft,
+    //             ));
+    //         }
+    //     }
+
+    //     if origin_y > 0 {
+    //         worklist.push((
+    //             [origin_x, origin_y],
+    //             [origin_x, origin_y - 1],
+    //             ConstraintDirection::Bottom,
+    //         ));
+    //     }
+
+    //     if origin_y < self.grid_size[1] - 1 {
+    //         worklist.push((
+    //             [origin_x, origin_y],
+    //             [origin_x, origin_y + 1],
+    //             ConstraintDirection::Top,
+    //         ));
+    //     }
+
+    //     while let Some((origin, target, constraint_direction)) = worklist.pop() {
+    //         let patterns = &self.super_grid[target[0]][target[1]];
+
+    //         let mut new_valids = Vec::new();
+    //         let mut added_directions = Vec::new();
+
+    //         for pattern_id in patterns {
+    //             let origin_ids = &self.super_grid[origin[0]][origin[1]];
+
+    //             if !origin_ids.iter().any(|other_id| {
+    //                 self.constraint_collection.exists(&Constraint {
+    //                     pattern_a_id: *pattern_id,
+    //                     pattern_b_id: *other_id,
+    //                     direction: constraint_direction,
+    //                 })
+    //             }) {
+    //                 if constraint_direction != ConstraintDirection::Left
+    //                     && target[0] > 0
+    //                     && !added_directions.contains(&ConstraintDirection::Right)
+    //                 {
+    //                     worklist.push((
+    //                         target,
+    //                         [target[0] - 1, target[1]],
+    //                         ConstraintDirection::Right,
+    //                     ));
+    //                     added_directions.push(ConstraintDirection::Right);
+    //                 }
+
+    //                 if constraint_direction != ConstraintDirection::Right
+    //                     && target[0] < self.grid_size[0] - 1
+    //                     && !added_directions.contains(&ConstraintDirection::Left)
+    //                 {
+    //                     worklist.push((
+    //                         target,
+    //                         [target[0] + 1, target[1]],
+    //                         ConstraintDirection::Left,
+    //                     ));
+    //                     added_directions.push(ConstraintDirection::Left);
+    //                 }
+
+    //                 if constraint_direction != ConstraintDirection::Top
+    //                     && target[1] > 0
+    //                     && !added_directions.contains(&ConstraintDirection::Bottom)
+    //                 {
+    //                     worklist.push((
+    //                         target,
+    //                         [target[0], target[1] - 1],
+    //                         ConstraintDirection::Bottom,
+    //                     ));
+    //                     added_directions.push(ConstraintDirection::Bottom);
+    //                 }
+
+    //                 if constraint_direction != ConstraintDirection::Bottom
+    //                     && target[1] < self.grid_size[1] - 1
+    //                     && !added_directions.contains(&ConstraintDirection::Top)
+    //                 {
+    //                     worklist.push((
+    //                         target,
+    //                         [target[0], target[1] + 1],
+    //                         ConstraintDirection::Top,
+    //                     ));
+    //                     added_directions.push(ConstraintDirection::Top);
+    //                 }
+
+    //                 if constraint_direction != ConstraintDirection::TopLeft
+    //                     && target[0] > 0
+    //                     && target[1] > 0
+    //                     && !added_directions.contains(&ConstraintDirection::BottomRight)
+    //                 {
+    //                     worklist.push((
+    //                         target,
+    //                         [target[0] - 1, target[1] - 1],
+    //                         ConstraintDirection::BottomRight,
+    //                     ));
+    //                     added_directions.push(ConstraintDirection::BottomRight);
+    //                 }
+
+    //                 if constraint_direction != ConstraintDirection::TopRight
+    //                     && target[0] < self.grid_size[0] - 1
+    //                     && target[1] > 0
+    //                     && !added_directions.contains(&ConstraintDirection::BottomLeft)
+    //                 {
+    //                     worklist.push((
+    //                         target,
+    //                         [target[0] + 1, target[1] - 1],
+    //                         ConstraintDirection::BottomLeft,
+    //                     ));
+    //                     added_directions.push(ConstraintDirection::BottomLeft);
+    //                 }
+
+    //                 if constraint_direction != ConstraintDirection::BottomLeft
+    //                     && target[0] > 0
+    //                     && target[1] < self.grid_size[1] - 1
+    //                     && !added_directions.contains(&ConstraintDirection::TopRight)
+    //                 {
+    //                     worklist.push((
+    //                         target,
+    //                         [target[0] - 1, target[1] + 1],
+    //                         ConstraintDirection::TopRight,
+    //                     ));
+    //                     added_directions.push(ConstraintDirection::TopRight);
+    //                 }
+
+    //                 if constraint_direction != ConstraintDirection::BottomRight
+    //                     && target[0] < self.grid_size[0] - 1
+    //                     && target[1] < self.grid_size[1] - 1
+    //                     && !added_directions.contains(&ConstraintDirection::TopLeft)
+    //                 {
+    //                     worklist.push((
+    //                         target,
+    //                         [target[0] + 1, target[1] + 1],
+    //                         ConstraintDirection::TopLeft,
+    //                     ));
+    //                     added_directions.push(ConstraintDirection::TopLeft);
+    //                 }
+    //             } else {
+    //                 new_valids.push(*pattern_id);
+    //             }
+    //         }
+
+    //         if new_valids.len() == 0 {
+    //             return false;
+    //         }
+
+    //         self.super_grid[target[0]][target[1]] = new_valids;
+    //     }
+
+    //     true
+    // }
 }

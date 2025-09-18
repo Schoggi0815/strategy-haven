@@ -1,9 +1,8 @@
 use std::fs::File;
 use std::io::Read;
 
+use crate::r#match::world::ms::ms_grid::MSGrid;
 use crate::r#match::world::tile_grid::TileGrid;
-use crate::r#match::world::wfc::pattern_palette::PatternPalette;
-use crate::r#match::world::wfc::super_grid::SuperGrid;
 use crate::r#match::world::{
     global_chances_resource::GlobalChancesResource, wfc_tile::WfcTile, world_state::WorldState,
     world_tile_position::WorldTilePosition, world_tile_type::WorldTileType,
@@ -43,16 +42,21 @@ fn spawn_tiles(
     let reference: TileGrid = ron::from_str(&ron_string).expect("Could not parse file.");
 
     println!("{}", reference);
-    let patterns = reference.get_patterns::<3, 3>();
-    patterns
-        .iter()
-        .enumerate()
-        .for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid()));
-    let pattern_palette = PatternPalette::new(patterns);
-    let mut super_grid = SuperGrid::new_empty(pattern_palette, [100, 100]);
-    super_grid.set(3, 3, WorldTileTypeFlags::Beach);
-    super_grid.collapse_grid();
-    let new_grid = super_grid.to_tile_grid();
+
+    let mut ms_grid = MSGrid::from_tile_grid(&reference, 3, 3, 60, 60);
+    ms_grid.collapse_grid();
+    let new_grid = ms_grid.to_tile_grid();
+
+    // let patterns = reference.get_patterns::<3, 3>();
+    // patterns
+    //     .iter()
+    //     .enumerate()
+    //     .for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid()));
+    // let pattern_palette = PatternPalette::new(patterns);
+    // let mut super_grid = SuperGrid::new_empty(pattern_palette, [100, 100]);
+    // super_grid.set(3, 3, WorldTileTypeFlags::Beach);
+    // super_grid.collapse_grid();
+    // let new_grid = super_grid.to_tile_grid();
 
     let mesh = meshes.add(Cuboid::from_size(Vec3::ONE));
 
