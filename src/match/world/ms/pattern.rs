@@ -46,4 +46,20 @@ impl Pattern {
             size: self.size,
         }
     }
+
+    pub fn flip_y(&self) -> Self {
+        let mut tiles = Vec::with_capacity(self.size[0]);
+
+        for x in 0..self.size[0] {
+            tiles.push(Vec::with_capacity(self.size[1]));
+            for y in 0..self.size[1] {
+                tiles[x].push(self.tiles[x][self.size[1] - 1 - y]);
+            }
+        }
+
+        Pattern {
+            tiles,
+            size: self.size,
+        }
+    }
 }

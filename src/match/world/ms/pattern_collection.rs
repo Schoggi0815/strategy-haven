@@ -6,17 +6,23 @@ use crate::r#match::world::ms::{
 
 pub struct PatternCollection {
     pub patterns: Vec<Pattern>,
+    pub pattern_counts: Vec<usize>,
 }
 
 impl PatternCollection {
     pub fn new() -> Self {
         Self {
             patterns: Vec::new(),
+            pattern_counts: Vec::new(),
         }
     }
 
     pub fn get(&self, pattern_id: usize) -> &Pattern {
         &self.patterns[pattern_id]
+    }
+
+    pub fn get_count(&self, pattern_id: usize) -> usize {
+        self.pattern_counts[pattern_id]
     }
 
     pub fn add_or_get(&mut self, pattern: Pattern) -> usize {
@@ -26,10 +32,12 @@ impl PatternCollection {
             .enumerate()
             .find(|(_, p)| **p == pattern)
         {
+            self.pattern_counts[id] += 1;
             id
         } else {
             let id = self.patterns.len();
             self.patterns.push(pattern);
+            self.pattern_counts.push(1);
             id
         }
     }
@@ -74,10 +82,14 @@ impl PatternCollection {
             let other_rotated_id = self.add_or_get(other_rotated);
 
             let rotated_direction = match constraint.direction {
-                ConstraintDirection::Top => ConstraintDirection::Right,
-                ConstraintDirection::Right => ConstraintDirection::Bottom,
-                ConstraintDirection::Bottom => ConstraintDirection::Left,
-                ConstraintDirection::Left => ConstraintDirection::Top,
+                ConstraintDirection::Top => ConstraintDirection::Left,
+                ConstraintDirection::Right => ConstraintDirection::Top,
+                ConstraintDirection::Bottom => ConstraintDirection::Right,
+                ConstraintDirection::Left => ConstraintDirection::Bottom,
+                ConstraintDirection::TopLeft => ConstraintDirection::BottomLeft,
+                ConstraintDirection::TopRight => ConstraintDirection::TopLeft,
+                ConstraintDirection::BottomLeft => ConstraintDirection::BottomRight,
+                ConstraintDirection::BottomRight => ConstraintDirection::TopRight,
             };
 
             let new_constraint = Constraint {
@@ -109,8 +121,12 @@ impl PatternCollection {
         pattern: &Pattern,
         pattern_id: usize,
     ) -> (Pattern, usize) {
-        let flipped = pattern.flip_x();
-        let flipped_id = self.add_or_get(flipped.clone());
+        let flipped_x = pattern.flip_x();
+        let flipped_x_id = self.add_or_get(flipped_x.clone());
+        let flipped_y = pattern.flip_y();
+        let flipped_y_id = self.add_or_get(flipped_y.clone());
+        let flipped_xy = flipped_x.flip_y();
+        let flipped_xy_id = self.add_or_get(flipped_xy.clone());
 
         let mut new_constraints = Vec::new();
 
@@ -119,31 +135,65 @@ impl PatternCollection {
             .iter()
             .filter(|constraint| constraint.pattern_a_id == pattern_id)
         {
-            let other_flipped = self.patterns[constraint.pattern_b_id].flip_x();
-            let other_flipped_id = self.add_or_get(other_flipped);
+            let other_flipped_x = self.patterns[constraint.pattern_b_id].flip_x();
+            let other_flipped_x_id = self.add_or_get(other_flipped_x.clone());
+            let other_flipped_y = self.patterns[constraint.pattern_b_id].flip_y();
+            let other_flipped_y_id = self.add_or_get(other_flipped_y);
+            let other_flipped_xy = other_flipped_x.flip_y();
+            let other_flipped_xy_id = self.add_or_get(other_flipped_xy);
 
-            let flipped_direction = constraint.direction.reverse();
+            let flipped_direction_x = constraint.direction.flip_x();
+            let flipped_direction_y = constraint.direction.flip_y();
+            let flipped_direction_xy = constraint.direction.reverse();
 
-            let new_constraint = Constraint {
-                pattern_a_id: flipped_id,
-                pattern_b_id: other_flipped_id,
-                direction: flipped_direction,
+            let new_constraint_x = Constraint {
+                pattern_a_id: flipped_x_id,
+                pattern_b_id: other_flipped_x_id,
+                direction: flipped_direction_x,
             };
 
-            let new_constraint_back = Constraint {
-                pattern_a_id: other_flipped_id,
-                pattern_b_id: flipped_id,
-                direction: flipped_direction.reverse(),
+            let new_constraint_x_back = Constraint {
+                pattern_a_id: other_flipped_x_id,
+                pattern_b_id: flipped_x_id,
+                direction: flipped_direction_x.reverse(),
             };
 
-            new_constraints.push(new_constraint);
-            new_constraints.push(new_constraint_back);
+            let new_constraint_y = Constraint {
+                pattern_a_id: flipped_y_id,
+                pattern_b_id: other_flipped_y_id,
+                direction: flipped_direction_y,
+            };
+
+            let new_constraint_y_back = Constraint {
+                pattern_a_id: other_flipped_y_id,
+                pattern_b_id: flipped_y_id,
+                direction: flipped_direction_y.reverse(),
+            };
+
+            let new_constraint_xy = Constraint {
+                pattern_a_id: flipped_xy_id,
+                pattern_b_id: other_flipped_xy_id,
+                direction: flipped_direction_xy,
+            };
+
+            let new_constraint_xy_back = Constraint {
+                pattern_a_id: other_flipped_xy_id,
+                pattern_b_id: flipped_xy_id,
+                direction: flipped_direction_xy.reverse(),
+            };
+
+            new_constraints.push(new_constraint_x);
+            new_constraints.push(new_constraint_x_back);
+            new_constraints.push(new_constraint_y);
+            new_constraints.push(new_constraint_y_back);
+            new_constraints.push(new_constraint_xy);
+            new_constraints.push(new_constraint_xy_back);
         }
 
         new_constraints
             .into_iter()
             .for_each(|nc| constraint_collection.add(nc));
 
-        (flipped, flipped_id)
+        (flipped_x, flipped_x_id)
     }
 }

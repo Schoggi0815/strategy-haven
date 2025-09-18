@@ -13,21 +13,21 @@ fn main() {
         .expect("Could not read file.");
 
     let reference: TileGrid = ron::from_str(&ron_string).expect("Could not parse file.");
-    println!("{}", reference);
+    // println!("{}", reference);
 
     let patterns = reference.get_patterns::<3, 3>();
 
-    patterns.iter().enumerate().for_each(|(i, p)| {
-        println!(
-            "Pattern {} occured {} times:\n{}",
-            i,
-            p.occurrence_count,
-            p.to_grid()
-        )
-    });
+    // patterns.iter().enumerate().for_each(|(i, p)| {
+    //     println!(
+    //         "Pattern {} occured {} times:\n{}",
+    //         i,
+    //         p.occurrence_count,
+    //         p.to_grid()
+    //     )
+    // });
 
     let pattern_palette = PatternPalette::new(patterns);
-    let mut super_grid = SuperGrid::new_empty(pattern_palette, [50, 50]);
+    let mut super_grid = SuperGrid::new_empty(pattern_palette, [51, 51]);
     super_grid.set(10, 10, WorldTileTypeFlags::Beach);
 
     let now = Instant::now();
