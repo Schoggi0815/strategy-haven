@@ -174,7 +174,7 @@ impl MSGrid {
                         fail_count += 1;
                         self.super_grid = before_state.clone();
 
-                        if fail_count >= 10 {
+                        if fail_count >= 20 {
                             println!("Failed to generate subset {} times, exiting", fail_count);
                             return;
                         }
@@ -188,10 +188,6 @@ impl MSGrid {
         for x in offset[0]..offset[0] + subset_size[0] {
             for y in offset[1]..offset[1] + subset_size[1] {
                 let possible_states = &self.super_grid[x][y];
-
-                if possible_states.len() < 1 {
-                    return false;
-                }
 
                 let counts = possible_states
                     .iter()
@@ -217,7 +213,9 @@ impl MSGrid {
                 let random_state = possible_states[random_state];
 
                 self.super_grid[x][y] = vec![random_state];
-                self.propagate_change_from(x, y);
+                if !self.propagate_change_from(x, y) {
+                    return false;
+                }
             }
         }
 
@@ -241,7 +239,7 @@ impl MSGrid {
             .unwrap()
     }
 
-    fn propagate_change_from(&mut self, origin_x: usize, origin_y: usize) {
+    fn propagate_change_from(&mut self, origin_x: usize, origin_y: usize) -> bool {
         let mut worklist = Vec::new();
 
         if origin_x > 0 {
@@ -428,7 +426,13 @@ impl MSGrid {
                 }
             }
 
+            if new_valids.len() == 0 {
+                return false;
+            }
+
             self.super_grid[target[0]][target[1]] = new_valids;
         }
+
+        true
     }
 }

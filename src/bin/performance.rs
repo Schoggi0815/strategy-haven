@@ -27,7 +27,7 @@ fn main() {
     // });
 
     let pattern_palette = PatternPalette::new(patterns);
-    let mut super_grid = SuperGrid::new_empty(pattern_palette, [51, 51]);
+    let mut super_grid = SuperGrid::new_empty(pattern_palette, [180, 180]);
     super_grid.set(10, 10, WorldTileTypeFlags::Beach);
 
     let now = Instant::now();
