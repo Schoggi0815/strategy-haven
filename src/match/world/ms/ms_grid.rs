@@ -52,57 +52,57 @@ impl MSGrid {
                 let pattern_id = pattern_collection.add_or_get(pattern);
                 pattern_ids[x].push(pattern_id);
 
-                if x > 2 {
+                if x > (pattern_size_x - 1) {
                     pattern_collection.add_support(
                         pattern_id,
                         ConstraintDirection::Left,
-                        pattern_ids[x - 3][y],
+                        pattern_ids[x - pattern_size_x][y],
                     );
 
                     pattern_collection.add_support(
-                        pattern_ids[x - 3][y],
+                        pattern_ids[x - pattern_size_x][y],
                         ConstraintDirection::Right,
                         pattern_id,
                     );
 
-                    if y > 2 {
+                    if y > (pattern_size_y - 1) {
                         pattern_collection.add_support(
                             pattern_id,
                             ConstraintDirection::TopLeft,
-                            pattern_ids[x - 3][y - 3],
+                            pattern_ids[x - pattern_size_x][y - pattern_size_y],
                         );
 
                         pattern_collection.add_support(
-                            pattern_ids[x - 3][y - 3],
+                            pattern_ids[x - pattern_size_x][y - pattern_size_y],
                             ConstraintDirection::BottomRight,
                             pattern_id,
                         );
                     }
 
-                    if y < tile_grid.grid_size[1] - pattern_size_y - 2 {
+                    if y < tile_grid.grid_size[1] - pattern_size_y - (pattern_size_y - 1) {
                         pattern_collection.add_support(
                             pattern_id,
                             ConstraintDirection::BottomLeft,
-                            pattern_ids[x - 3][y + 3],
+                            pattern_ids[x - pattern_size_x][y + pattern_size_y],
                         );
 
                         pattern_collection.add_support(
-                            pattern_ids[x - 3][y + 3],
+                            pattern_ids[x - pattern_size_x][y + pattern_size_y],
                             ConstraintDirection::TopRight,
                             pattern_id,
                         );
                     }
                 }
 
-                if y > 2 {
+                if y > (pattern_size_y - 1) {
                     pattern_collection.add_support(
                         pattern_id,
                         ConstraintDirection::Top,
-                        pattern_ids[x][y - 3],
+                        pattern_ids[x][y - pattern_size_y],
                     );
 
                     pattern_collection.add_support(
-                        pattern_ids[x][y - 3],
+                        pattern_ids[x][y - pattern_size_y],
                         ConstraintDirection::Bottom,
                         pattern_id,
                     );
@@ -112,6 +112,21 @@ impl MSGrid {
 
         pattern_collection.add_rotations();
         pattern_collection.add_flips();
+
+        // pattern_collection
+        //     .pattern_supports
+        //     .iter()
+        //     .enumerate()
+        //     .filter(|(_, directions)| {
+        //         directions
+        //             .iter()
+        //             .any(|other_patterns| other_patterns.len() == 0)
+        //     })
+        //     .map(|(id, connections)| (pattern_collection.get(id), connections))
+        //     .for_each(|(pattern, connections)| {
+        //         println!("connections: {:?}", connections);
+        //         println!("{}", pattern.get_grid())
+        //     });
 
         // for (id, pattern) in pattern_collection.patterns.iter().enumerate() {
         //     println!("Pattern with id {}:", id);
@@ -145,7 +160,7 @@ impl MSGrid {
     }
 
     pub fn collapse_grid(&mut self) {
-        const SUBSET_SIZE: usize = 5;
+        const SUBSET_SIZE: usize = 10;
 
         for x in 0..=self.grid_size[0] / SUBSET_SIZE {
             for y in 0..=self.grid_size[1] / SUBSET_SIZE {
@@ -169,7 +184,7 @@ impl MSGrid {
                         fail_count += 1;
                         self.support_count_grid = before_state.clone();
 
-                        if fail_count >= 100 {
+                        if fail_count >= 20 {
                             println!("Failed to generate subset {} times, exiting", fail_count);
                             return;
                         }
@@ -201,23 +216,24 @@ impl MSGrid {
                 let total_count: usize = counts.iter().sum();
                 let random_count = rand::random_range(0..total_count);
 
-                let (_, random_state) = possible_states
+                let random_state = possible_states
                     .iter()
-                    .enumerate()
-                    .fold_while((0, 0), |(acc, _), (i, id)| {
+                    .fold_while((0, None), |(acc, _), id| {
                         let new_acc = acc + self.pattern_collection.get_count(*id);
                         if new_acc >= random_count {
-                            FoldWhile::Done((new_acc, i))
+                            FoldWhile::Done((new_acc, Some(*id)))
                         } else {
-                            FoldWhile::Continue((new_acc, 0))
+                            FoldWhile::Continue((new_acc, None))
                         }
                     })
-                    .into_inner();
+                    .into_inner()
+                    .1
+                    .unwrap();
 
-                let random_state = possible_states[rand::random_range(0..possible_states.len())];
+                // let random_state = possible_states[rand::random_range(0..possible_states.len())];
 
-                println!("Popped pattern for {}, {}:", x, y);
-                println!("{}", self.pattern_collection.get(random_state).get_grid());
+                // println!("Popped pattern for {}, {}:", x, y);
+                // println!("{}", self.pattern_collection.get(random_state).get_grid());
 
                 let removed_states = possible_states
                     .iter()
@@ -239,8 +255,8 @@ impl MSGrid {
                     return false;
                 }
 
-                println!("Step {}, {}:", x, y);
-                println!("{}", self.to_tile_grid());
+                // println!("Step {}, {}:", x, y);
+                // println!("{}", self.to_tile_grid());
             }
         }
 

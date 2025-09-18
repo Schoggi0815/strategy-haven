@@ -61,9 +61,10 @@ fn setup(mut commands: Commands, editor_resource: Res<EditorResource>) {
         file.read_to_string(&mut ron_string)
             .expect("Could not read file.");
 
-        let mut grid: TileGrid = ron::from_str(&ron_string).expect("Could not parse file.");
+        let grid: TileGrid = ron::from_str(&ron_string).expect("Could not parse file.");
 
-        grid.resize([30, 30]);
+        // grid.resize([36, 36]);
+        // grid.shift([1, 1], WorldTileType::Water);
 
         commands.spawn(GridComponent { grid });
     } else {

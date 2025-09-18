@@ -82,8 +82,8 @@ fn spawn_tiles(
         WorldTileType::Uncertain.get_color(),
     ));
 
-    for x in 0..100 {
-        for y in 0..100 {
+    for x in 0..180 {
+        for y in 0..180 {
             // let position = WorldTilePosition::new(x, y);
             let tile_type = new_grid.get(x, y);
 

@@ -43,6 +43,20 @@ impl TileGrid {
         );
     }
 
+    pub fn shift(&mut self, shift: [usize; 2], new: WorldTileType) {
+        self.data.iter_mut().for_each(|column| {
+            *column = (0..shift[1])
+                .map(|_| new.clone())
+                .chain(column.iter().take(self.grid_size[1] - shift[1]).cloned())
+                .collect_vec()
+        });
+
+        self.data = (0..shift[0])
+            .map(|_| (0..self.grid_size[1]).map(|_| new.clone()).collect_vec())
+            .chain(self.data.iter().take(self.grid_size[0] - shift[0]).cloned())
+            .collect_vec();
+    }
+
     pub fn get_patterns<const P_SIZE_X: usize, const P_SIZE_Y: usize>(&self) -> Vec<PatternData> {
         let all: Vec<_> = (0..self.grid_size[0] - P_SIZE_X)
             .cartesian_product(0..self.grid_size[1] - P_SIZE_Y)
