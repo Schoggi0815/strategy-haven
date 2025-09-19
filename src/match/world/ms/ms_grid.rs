@@ -162,6 +162,8 @@ impl MSGrid {
     pub fn collapse_grid(&mut self) {
         const SUBSET_SIZE: usize = 10;
 
+        let mut state_clone = self.support_count_grid.clone();
+
         for x in 0..=self.grid_size[0] / SUBSET_SIZE {
             for y in 0..=self.grid_size[1] / SUBSET_SIZE {
                 let offset = [x * SUBSET_SIZE, y * SUBSET_SIZE];
@@ -173,7 +175,7 @@ impl MSGrid {
                 let mut result = false;
                 let mut fail_count = 0;
 
-                let before_state = self.support_count_grid.clone();
+                Self::store_grid_into(&mut state_clone, &self.support_count_grid);
 
                 while !result {
                     result = self.collapse_subset(offset, size);
@@ -182,7 +184,7 @@ impl MSGrid {
                         println!("Subset at [{}, {}] failed!", x, y);
 
                         fail_count += 1;
-                        self.support_count_grid = before_state.clone();
+                        Self::store_grid_into(&mut self.support_count_grid, &state_clone);
 
                         if fail_count >= 20 {
                             println!("Failed to generate subset {} times, exiting", fail_count);
@@ -192,6 +194,27 @@ impl MSGrid {
                 }
             }
         }
+    }
+
+    fn store_grid_into(target: &mut Vec<Vec<Vec<Vec<usize>>>>, origin: &Vec<Vec<Vec<Vec<usize>>>>) {
+        target
+            .iter_mut()
+            .zip(origin.iter())
+            .for_each(|(column_clone, column)| {
+                column_clone
+                    .iter_mut()
+                    .zip(column.iter())
+                    .for_each(|(patterns_clone, patterns)| {
+                        patterns_clone.iter_mut().zip(patterns.iter()).for_each(
+                            |(directions_clone, directions)| {
+                                directions_clone
+                                    .iter_mut()
+                                    .zip(directions.iter())
+                                    .for_each(|(count_clone, count)| *count_clone = *count)
+                            },
+                        )
+                    })
+            });
     }
 
     pub fn collapse_subset(&mut self, offset: [usize; 2], subset_size: [usize; 2]) -> bool {

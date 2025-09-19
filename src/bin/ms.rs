@@ -10,7 +10,7 @@ pub fn main() {
 
     let reference: TileGrid = ron::from_str(&ron_string).expect("Could not parse file.");
 
-    let mut ms_grid = MSGrid::from_tile_grid(&reference, 3, 3, 17, 17);
+    let mut ms_grid = MSGrid::from_tile_grid(&reference, 3, 3, 40, 40);
 
     let now = Instant::now();
     ms_grid.collapse_grid();
