@@ -47,17 +47,6 @@ fn spawn_tiles(
     ms_grid.collapse_grid();
     let new_grid = ms_grid.to_tile_grid();
 
-    // let patterns = reference.get_patterns::<3, 3>();
-    // patterns
-    //     .iter()
-    //     .enumerate()
-    //     .for_each(|(i, p)| println!("Pattern {}:\n{}", i, p.to_grid()));
-    // let pattern_palette = PatternPalette::new(patterns);
-    // let mut super_grid = SuperGrid::new_empty(pattern_palette, [100, 100]);
-    // super_grid.set(3, 3, WorldTileTypeFlags::Beach);
-    // super_grid.collapse_grid();
-    // let new_grid = super_grid.to_tile_grid();
-
     let mesh = meshes.add(Cuboid::from_size(Vec3::ONE));
 
     let water_material = materials.add(StandardMaterial::from_color(
