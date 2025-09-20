@@ -164,7 +164,7 @@ pub fn play_offline(
         return;
     }
 
-    main_menu_state.set(MainMenuState::Hidden);
+    main_menu_state.set(MainMenuState::SingleplayerLoading);
 }
 
 pub fn read_server_selection_button_input(

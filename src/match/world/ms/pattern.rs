@@ -1,4 +1,4 @@
-use crate::r#match::world::{tile_grid::TileGrid, world_tile_type::WorldTileType};
+use crate::{r#match::world::tile_grid::TileGrid, networking::world_tile_type::WorldTileType};
 
 #[derive(PartialEq, Eq, Clone)]
 pub struct Pattern {

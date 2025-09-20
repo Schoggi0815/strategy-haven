@@ -1,35 +1,48 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
-use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
+use bevy_panorbit_camera::PanOrbitCameraPlugin;
 use bevy_ui_text_input::TextInputPlugin;
 use strategy_haven::{
     main_menu::{main_menu_plugin::MainMenuPlugin, main_menu_state::MainMenuState},
-    r#match::{match_plugin::MatchPlugin, match_state::MatchState},
+    networking::{network_state::NetworkState, networking_plugin::NetworkingPlugin},
 };
+
+#[derive(Component)]
+struct MenuCam;
 
 fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins,
             MainMenuPlugin,
-            MatchPlugin,
             EguiPlugin::default(),
             WorldInspectorPlugin::default(),
             PanOrbitCameraPlugin,
+            NetworkingPlugin,
             TextInputPlugin,
         ))
-        .add_systems(Startup, setup)
-        .add_systems(OnEnter(MainMenuState::Hidden), start_match)
+        .add_systems(Startup, spawn_main_menu_camera)
+        .add_systems(OnExit(MainMenuState::Hidden), spawn_main_menu_camera)
+        .add_systems(OnEnter(MainMenuState::Hidden), remove_main_menu_camera)
+        .add_systems(
+            OnEnter(MainMenuState::SingleplayerLoading),
+            start_singleplayer,
+        )
         .run();
 }
 
-fn setup(mut commands: Commands) {
-    commands.spawn((
-        Transform::from_translation(Vec3::new(0.0, 1.5, 5.0)),
-        PanOrbitCamera::default(),
-    ));
+fn spawn_main_menu_camera(mut commands: Commands) {
+    commands.spawn((Camera2d, MenuCam));
 }
 
-fn start_match(mut match_state: ResMut<NextState<MatchState>>) {
-    match_state.set(MatchState::Setup);
+fn remove_main_menu_camera(camera: Single<Entity, With<MenuCam>>, mut commands: Commands) {
+    commands.entity(camera.into_inner()).despawn();
+}
+
+fn start_singleplayer(
+    mut menu_state: ResMut<NextState<MainMenuState>>,
+    mut network_state: ResMut<NextState<NetworkState>>,
+) {
+    menu_state.set(MainMenuState::Hidden);
+    network_state.set(NetworkState::Singleplayer);
 }

@@ -4,6 +4,5 @@ use bevy::prelude::*;
 pub enum ServerState {
     #[default]
     Off,
-    Singleplayer,
-    Host,
+    On,
 }

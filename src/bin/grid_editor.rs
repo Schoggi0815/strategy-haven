@@ -11,7 +11,9 @@ use bevy_inspector_egui::{
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use itertools::Itertools;
 use ron::ser::PrettyConfig;
-use strategy_haven::r#match::world::{tile_grid::TileGrid, world_tile_type::WorldTileType};
+use strategy_haven::{
+    r#match::world::tile_grid::TileGrid, networking::world_tile_type::WorldTileType,
+};
 
 fn main() {
     App::new()
