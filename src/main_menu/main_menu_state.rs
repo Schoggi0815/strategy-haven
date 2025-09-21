@@ -5,6 +5,7 @@ pub enum MainMenuState {
     #[default]
     ServerSelection,
     SingleplayerLoading,
-    ServerSelectionLoading,
+    JoinLoading,
+    HostLoading,
     Hidden,
 }

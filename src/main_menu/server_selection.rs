@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_ui_text_input::{TextInputContents, TextInputMode, TextInputNode, TextInputPrompt};
 
-use crate::main_menu::main_menu_state::MainMenuState;
+use crate::main_menu::{address_input::AddressInput, main_menu_state::MainMenuState};
 
 #[derive(Component)]
 pub struct ServerSelectionMenu;
@@ -13,7 +13,10 @@ pub struct ServerSelectionPlayOnlineButton;
 pub struct ServerSelectionPlayOfflineButton;
 
 #[derive(Component)]
-pub struct ServerAdressInput;
+pub struct ServerSelectionPlayHostButton;
+
+#[derive(Component)]
+pub struct ServerAddressInput;
 
 #[derive(Component)]
 pub struct ServerPortInput;
@@ -48,6 +51,31 @@ pub fn spawn_server_selection(mut commands: Commands, assets: Res<AssetServer>) 
                 BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
                 children![(
                     Text::new("Play Offline"),
+                    TextFont {
+                        font: font.clone(),
+                        font_size: 33.0,
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                    TextShadow::default(),
+                )]
+            ),
+            (
+                ServerSelectionPlayHostButton,
+                Button,
+                Node {
+                    width: Val::Px(200.0),
+                    height: Val::Px(65.0),
+                    border: UiRect::all(Val::Px(5.0)),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                BorderColor(Color::BLACK),
+                BorderRadius::MAX,
+                BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
+                children![(
+                    Text::new("Host Game!"),
                     TextFont {
                         font: font.clone(),
                         font_size: 33.0,
@@ -94,24 +122,8 @@ pub fn spawn_server_selection(mut commands: Commands, assets: Res<AssetServer>) 
                 BorderRadius::new(Val::Px(5.), Val::Px(5.), Val::Px(5.), Val::Px(5.)),
                 BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
                 children![(
-                    ServerAdressInput,
+                    ServerAddressInput,
                     get_text_input(font.clone(), "Server. (Leave empty for default)".into())
-                )]
-            ),
-            (
-                Node {
-                    width: Val::Px(400.0),
-                    height: Val::Px(45.0),
-                    border: UiRect::all(Val::Px(5.0)),
-                    padding: UiRect::all(Val::Px(5.0)),
-                    ..default()
-                },
-                BorderColor(Color::BLACK),
-                BorderRadius::new(Val::Px(5.), Val::Px(5.), Val::Px(5.), Val::Px(5.)),
-                BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
-                children![(
-                    ServerPortInput,
-                    get_text_input(font.clone(), "Port. (Leave empty for default)".into())
                 )]
             )
         ],
@@ -167,20 +179,30 @@ pub fn play_offline(
     main_menu_state.set(MainMenuState::SingleplayerLoading);
 }
 
+pub fn play_host(
+    play_button: Single<&Interaction, (Changed<Interaction>, With<ServerSelectionPlayHostButton>)>,
+    mut main_menu_state: ResMut<NextState<MainMenuState>>,
+) {
+    if *play_button.into_inner() != Interaction::Pressed {
+        return;
+    }
+
+    main_menu_state.set(MainMenuState::HostLoading);
+}
+
 pub fn read_server_selection_button_input(
-    interaction_query: Query<
+    interaction: Single<
         &Interaction,
         (Changed<Interaction>, With<ServerSelectionPlayOnlineButton>),
     >,
     mut main_menu_state: ResMut<NextState<MainMenuState>>,
+    mut commands: Commands,
+    address: Single<&TextInputContents, With<ServerAddressInput>>,
 ) {
-    let Ok(interaction) = interaction_query.single() else {
-        return;
-    };
-
-    if *interaction != Interaction::Pressed {
+    if *interaction.into_inner() != Interaction::Pressed {
         return;
     }
 
-    main_menu_state.set(MainMenuState::ServerSelectionLoading);
+    main_menu_state.set(MainMenuState::JoinLoading);
+    commands.insert_resource(AddressInput(address.get().into()));
 }

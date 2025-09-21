@@ -4648,6 +4648,7 @@ dependencies = [
  "bitflags 2.9.4",
  "colored",
  "crossbeam",
+ "futures-util",
  "hex",
  "itertools 0.14.0",
  "log",
@@ -4655,6 +4656,7 @@ dependencies = [
  "ron 0.11.0",
  "rustc-hash 2.1.1",
  "serde",
+ "tokio",
 ]
 
 [[package]]
