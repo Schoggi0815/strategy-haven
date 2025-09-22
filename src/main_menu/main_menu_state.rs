@@ -4,6 +4,8 @@ use bevy::state::state::States;
 pub enum MainMenuState {
     #[default]
     ServerSelection,
-    ServerSelectionLoading,
+    SingleplayerLoading,
+    JoinLoading,
+    HostLoading,
     Hidden,
 }
