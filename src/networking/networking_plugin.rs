@@ -12,6 +12,7 @@ use bevy_hookup_messenger_websocket::{
 
 use crate::{
     client::{client_plugin::ClientPlugin, client_state::ClientState},
+    common::{player_id::PlayerId, player_name::PlayerName, player_private_id::PlayerPrivateId},
     networking::{
         connection_details::ConnectionDetails, network_state::NetworkState, sendables::Sendables,
         world_tile_position::WorldTilePosition, world_tile_type::WorldTileType,
@@ -27,6 +28,12 @@ impl Plugin for NetworkingPlugin {
             .register_type::<Shared<WorldTileType>>()
             .register_type::<Owner<WorldTilePosition>>()
             .register_type::<Shared<WorldTilePosition>>()
+            .register_type::<Owner<PlayerId>>()
+            .register_type::<Shared<PlayerId>>()
+            .register_type::<Owner<PlayerPrivateId>>()
+            .register_type::<Shared<PlayerPrivateId>>()
+            .register_type::<Owner<PlayerName>>()
+            .register_type::<Shared<PlayerName>>()
             .init_state::<NetworkState>()
             .add_plugins((
                 ClientPlugin,
@@ -36,6 +43,9 @@ impl Plugin for NetworkingPlugin {
                 HookupSendablePlugin::<Sendables>::default(),
                 HookupComponentPlugin::<Sendables, WorldTileType>::default(),
                 HookupComponentPlugin::<Sendables, WorldTilePosition>::default(),
+                HookupComponentPlugin::<Sendables, PlayerId>::default(),
+                HookupComponentPlugin::<Sendables, PlayerPrivateId>::default(),
+                HookupComponentPlugin::<Sendables, PlayerName>::default(),
             ))
             .add_systems(OnEnter(NetworkState::Singleplayer), start_singleplayer)
             .add_systems(OnEnter(NetworkState::Host), start_host)

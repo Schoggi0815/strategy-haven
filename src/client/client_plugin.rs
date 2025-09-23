@@ -1,10 +1,11 @@
 use bevy::prelude::*;
-use bevy_hookup_core::shared::Shared;
+use bevy_hookup_core::{owner_component::Owner, shared::Shared};
 use bevy_inspector_egui::bevy_egui::PrimaryEguiContext;
 use bevy_panorbit_camera::PanOrbitCamera;
 
 use crate::{
     client::{asset_store::AssetStore, client_state::ClientState},
+    common::{player_name::PlayerName, player_private_id::PlayerPrivateId},
     networking::{world_tile_position::WorldTilePosition, world_tile_type::WorldTileType},
 };
 
@@ -16,8 +17,23 @@ impl Plugin for ClientPlugin {
             .add_systems(OnEnter(ClientState::Connected), setup)
             .add_systems(
                 Update,
-                (spawn_world_tiles, spawn_tile_transform).run_if(in_state(ClientState::Connected)),
+                (spawn_world_tiles, spawn_tile_transform, add_name_owner)
+                    .run_if(in_state(ClientState::Connected)),
             );
+    }
+}
+
+fn add_name_owner(
+    names: Query<
+        (Entity, &Shared<PlayerName>),
+        (With<Shared<PlayerPrivateId>>, Without<Owner<PlayerName>>),
+    >,
+    mut commands: Commands,
+) {
+    for (entity, name) in names {
+        commands
+            .entity(entity)
+            .insert(Owner::new(name.inner.clone()));
     }
 }
 
