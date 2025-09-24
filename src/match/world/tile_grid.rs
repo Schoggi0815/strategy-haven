@@ -4,7 +4,7 @@ use colored::Colorize;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
-use crate::networking::world_tile_type::WorldTileType;
+use crate::game::world_tile_type::WorldTileType;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TileGrid {

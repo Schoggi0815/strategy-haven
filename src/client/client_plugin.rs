@@ -6,7 +6,7 @@ use bevy_panorbit_camera::PanOrbitCamera;
 use crate::{
     client::{asset_store::AssetStore, client_state::ClientState},
     common::{player_name::PlayerName, player_private_id::PlayerPrivateId},
-    networking::{world_tile_position::WorldTilePosition, world_tile_type::WorldTileType},
+    game::{world_tile_position::WorldTilePosition, world_tile_type::WorldTileType},
 };
 
 pub struct ClientPlugin;

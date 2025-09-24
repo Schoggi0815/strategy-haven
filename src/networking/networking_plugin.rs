@@ -13,9 +13,9 @@ use bevy_hookup_messenger_websocket::{
 use crate::{
     client::{client_plugin::ClientPlugin, client_state::ClientState},
     common::{player_id::PlayerId, player_name::PlayerName, player_private_id::PlayerPrivateId},
+    game::{world_tile_position::WorldTilePosition, world_tile_type::WorldTileType},
     networking::{
         connection_details::ConnectionDetails, network_state::NetworkState, sendables::Sendables,
-        world_tile_position::WorldTilePosition, world_tile_type::WorldTileType,
     },
     server::{server_plugin::ServerPlugin, server_state::ServerState},
 };

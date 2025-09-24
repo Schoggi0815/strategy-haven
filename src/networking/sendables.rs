@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     common::{player_id::PlayerId, player_name::PlayerName, player_private_id::PlayerPrivateId},
-    networking::{world_tile_position::WorldTilePosition, world_tile_type::WorldTileType},
+    game::{world_tile_position::WorldTilePosition, world_tile_type::WorldTileType},
 };
 
 #[derive(Debug, Sendable, Clone, Serialize, Deserialize)]

@@ -11,8 +11,9 @@ use crate::{
         player_id::PlayerId, player_name::PlayerName, player_private_id::PlayerPrivateId,
         session_component::SessionComponent,
     },
+    game::world_tile_position::WorldTilePosition,
     r#match::world::{ms::ms_grid::MSGrid, tile_grid::TileGrid},
-    networking::{sendables::Sendables, world_tile_position::WorldTilePosition},
+    networking::sendables::Sendables,
     server::server_state::ServerState,
 };
 
