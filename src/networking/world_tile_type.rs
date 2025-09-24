@@ -1,8 +1,5 @@
 use bevy::prelude::*;
-use bevy_hookup_core::sendable_component::SendableComponent;
 use serde::{Deserialize, Serialize};
-
-use crate::networking::sendables::Sendables;
 
 #[derive(
     Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize,
@@ -39,19 +36,6 @@ impl WorldTileType {
             WorldTileType::Beach => "Beach",
             WorldTileType::Empty => "Empty",
             WorldTileType::Uncertain => "Uncer",
-        }
-    }
-}
-
-impl SendableComponent<Sendables> for WorldTileType {
-    fn to_sendable(&self) -> Sendables {
-        Sendables::WorldTileType(*self)
-    }
-
-    fn from_sendable(sendable: Sendables) -> Option<Self> {
-        match sendable {
-            Sendables::WorldTileType(tile) => Some(tile),
-            _ => None,
         }
     }
 }

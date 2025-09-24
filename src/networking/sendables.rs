@@ -1,3 +1,4 @@
+use bevy_hookup_macros::Sendable;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -5,11 +6,16 @@ use crate::{
     networking::{world_tile_position::WorldTilePosition, world_tile_type::WorldTileType},
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Sendable, Clone, Serialize, Deserialize)]
 pub enum Sendables {
+    #[sendable]
     WorldTileType(WorldTileType),
+    #[sendable]
     WorldTilePosition(WorldTilePosition),
+    #[sendable]
     PlayerId(PlayerId),
+    #[sendable]
     PlayerPrivateId(PlayerPrivateId),
+    #[sendable]
     PlayerName(PlayerName),
 }
