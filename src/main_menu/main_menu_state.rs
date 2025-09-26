@@ -7,5 +7,6 @@ pub enum MainMenuState {
     SingleplayerLoading,
     JoinLoading,
     HostLoading,
+    MatchLobby,
     Hidden,
 }

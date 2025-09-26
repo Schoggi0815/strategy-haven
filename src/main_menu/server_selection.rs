@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 use bevy_ui_text_input::{TextInputContents, TextInputMode, TextInputNode, TextInputPrompt};
 
-use crate::main_menu::{address_input::AddressInput, main_menu_state::MainMenuState};
+use crate::main_menu::{
+    address_input::AddressInput, main_menu_state::MainMenuState, menu_resource::MenuResource,
+};
 
 #[derive(Component)]
 pub struct ServerSelectionMenu;
@@ -18,11 +20,8 @@ pub struct ServerSelectionPlayHostButton;
 #[derive(Component)]
 pub struct ServerAddressInput;
 
-#[derive(Component)]
-pub struct ServerPortInput;
-
-pub fn spawn_server_selection(mut commands: Commands, assets: Res<AssetServer>) {
-    let font = assets.load("fonts/Roboto-VariableFont_wdth,wght.ttf");
+pub fn spawn_server_selection(mut commands: Commands, menu_resource: Res<MenuResource>) {
+    let font = &menu_resource.font;
 
     commands.spawn((
         Node {

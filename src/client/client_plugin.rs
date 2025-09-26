@@ -17,23 +17,8 @@ impl Plugin for ClientPlugin {
             .add_systems(OnEnter(ClientState::Connected), setup)
             .add_systems(
                 Update,
-                (spawn_world_tiles, spawn_tile_transform, add_name_owner)
-                    .run_if(in_state(ClientState::Connected)),
+                (spawn_world_tiles, spawn_tile_transform).run_if(in_state(ClientState::Connected)),
             );
-    }
-}
-
-fn add_name_owner(
-    names: Query<
-        (Entity, &Shared<PlayerName>),
-        (With<Shared<PlayerPrivateId>>, Without<Owner<PlayerName>>),
-    >,
-    mut commands: Commands,
-) {
-    for (entity, name) in names {
-        commands
-            .entity(entity)
-            .insert(Owner::new(name.inner.clone()));
     }
 }
 
@@ -42,11 +27,11 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut commands: Commands,
 ) {
-    commands.spawn((
-        Transform::from_translation(Vec3::new(0.0, 1.5, 5.0)),
-        PanOrbitCamera::default(),
-        PrimaryEguiContext,
-    ));
+    // commands.spawn((
+    //     Transform::from_translation(Vec3::new(0.0, 1.5, 5.0)),
+    //     PanOrbitCamera::default(),
+    //     PrimaryEguiContext,
+    // ));
 
     let mesh = meshes.add(Cuboid::from_size(Vec3::ONE));
 

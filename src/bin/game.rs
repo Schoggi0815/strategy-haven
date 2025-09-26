@@ -53,7 +53,7 @@ fn start_singleplayer(
     mut menu_state: ResMut<NextState<MainMenuState>>,
     mut network_state: ResMut<NextState<NetworkState>>,
 ) {
-    menu_state.set(MainMenuState::Hidden);
+    menu_state.set(MainMenuState::MatchLobby);
     network_state.set(NetworkState::Singleplayer);
 }
 
@@ -62,7 +62,7 @@ fn start_host(
     mut network_state: ResMut<NextState<NetworkState>>,
 ) {
     network_state.set(NetworkState::Host);
-    menu_state.set(MainMenuState::Hidden);
+    menu_state.set(MainMenuState::MatchLobby);
 }
 
 fn return_to_title_screen(mut menu_state: ResMut<NextState<MainMenuState>>) {
@@ -79,6 +79,6 @@ fn start_join(
         server_id: server_adress.into_inner().0.clone(),
     });
 
-    menu_state.set(MainMenuState::Hidden);
+    menu_state.set(MainMenuState::MatchLobby);
     network_state.set(NetworkState::Join);
 }
