@@ -26,6 +26,26 @@ impl Plugin for ServerPlugin {
             .add_systems(
                 Update,
                 (add_player, rename_player).run_if(in_state(ServerState::On)),
+            )
+            .add_observer(
+                |trigger: Trigger<OnRemove, Session<Sendables>>,
+                 sessions: Query<&Session<Sendables>>,
+                 session_components: Query<(Entity, &SessionComponent)>,
+                 mut commands: Commands| {
+                    let Ok(removed_session) = sessions.get(trigger.target()) else {
+                        warn!("REMOVED SESSION NOT FOUND!");
+
+                        return;
+                    };
+
+                    for (entity, session_component) in session_components {
+                        if session_component.session_id != removed_session.get_session_id() {
+                            continue;
+                        }
+
+                        commands.entity(entity).despawn();
+                    }
+                },
             );
     }
 }
@@ -43,7 +63,10 @@ fn add_player(
             SyncEntityOwner::new()
                 .with_write_filter(SessionFilter::Whitelist(vec![session.get_session_id()])),
             Owner::new(player_id),
-            Owner::new(PlayerName(format!("Player {}", player_id))),
+            Owner::new(PlayerName(format!(
+                "Player {}",
+                &player_id.to_string()[0..5]
+            ))),
             Owner::new(player_private_id)
                 .with_read_filter(SessionFilter::Whitelist(vec![session.get_session_id()])),
             SessionComponent {

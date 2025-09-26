@@ -11,8 +11,8 @@ use bevy::{
 use crate::main_menu::{
     main_menu_state::MainMenuState::{self, *},
     match_lobby::{
-        despawn_match_lobby_ui, extend_with_player, extend_with_player_self, spawn_match_lobby_ui,
-        update_player_name, update_player_name_self,
+        despawn_match_lobby_ui, extend_with_player, extend_with_player_self, remove_player_names,
+        spawn_match_lobby_ui, update_player_name, update_player_name_self,
     },
     menu_resource::MenuResource,
     server_selection::{
@@ -33,6 +33,7 @@ impl Plugin for MainMenuPlugin {
             .add_systems(OnExit(ServerSelection), delete_server_selection)
             .add_systems(OnEnter(MatchLobby), spawn_match_lobby_ui)
             .add_systems(OnExit(MatchLobby), despawn_match_lobby_ui)
+            .add_observer(remove_player_names)
             .add_systems(
                 Update,
                 (read_server_selection_button_input, play_offline, play_host),

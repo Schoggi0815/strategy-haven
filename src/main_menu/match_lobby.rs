@@ -40,6 +40,27 @@ pub fn spawn_match_lobby_ui(mut commands: Commands, menu_resource: Res<MenuResou
     ));
 }
 
+pub fn remove_player_names(
+    trigger: Trigger<OnRemove, Shared<PlayerId>>,
+    player_ids: Query<&Shared<PlayerId>>,
+    match_ui_players: Query<(Entity, &MatchUiPlayer)>,
+    mut commands: Commands,
+) {
+    let Ok(player_id) = player_ids.get(trigger.target()) else {
+        warn!("Removed Player ID not found!");
+        return;
+    };
+
+    let Some((entity, _)) = match_ui_players
+        .iter()
+        .find(|(_, match_ui)| match_ui.0 == player_id.inner)
+    else {
+        return;
+    };
+
+    commands.entity(entity).despawn();
+}
+
 pub fn despawn_match_lobby_ui(
     mut commands: Commands,
     lobby_root: Single<Entity, With<MatchLobbyRoot>>,
@@ -60,6 +81,8 @@ pub fn extend_with_player(
     let font = &menu_resource.font;
 
     for (added_player_name, added_player_id) in added_player {
+        info!("ADDED OTHER PLAYER!");
+
         commands.entity(lobby_root).with_child((
             Text::new(added_player_name.0.clone()),
             TextFont {
@@ -85,6 +108,8 @@ pub fn extend_with_player_self(
     let font = &menu_resource.font;
 
     for (added_player_name, added_player_id, entity) in added_player {
+        info!("ADDED OWNED PLAYER!");
+
         commands
             .entity(entity)
             .insert(Owner::new(added_player_name.inner.clone()));
