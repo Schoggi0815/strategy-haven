@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use bevy_hookup_core::{
     hook_session::SessionMessenger, hookup_component_plugin::HookupComponentPlugin,
-    hookup_sendable_plugin::HookupSendablePlugin, owner_component::Owner, shared::Shared,
+    hookup_sendable_plugin::HookupSendablePlugin, owner_component::Owner,
+    send_component_set::SendComponentSet, shared::Shared,
 };
 use bevy_hookup_messenger_self::self_session::SelfSession;
 use bevy_hookup_messenger_websocket::{
@@ -53,6 +54,11 @@ impl Plugin for NetworkingPlugin {
             .add_systems(
                 Update,
                 client_on_connect.run_if(in_state(NetworkState::Join)),
+            )
+            .configure_sets(
+                FixedUpdate,
+                SendComponentSet::<PlayerPrivateId>::default()
+                    .before(SendComponentSet::<PlayerName>::default()),
             );
     }
 }
