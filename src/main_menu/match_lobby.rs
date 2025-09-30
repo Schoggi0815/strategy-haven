@@ -16,6 +16,9 @@ pub struct MatchLobbyRoot;
 #[derive(Component)]
 pub struct MatchUiPlayer(PlayerId);
 
+#[derive(Component)]
+pub struct MatchLobbyPlayerMarker;
+
 pub fn spawn_match_lobby_ui(mut commands: Commands, menu_resource: Res<MenuResource>) {
     let font = &menu_resource.font;
 
@@ -73,15 +76,22 @@ pub fn extend_with_player(
     menu_resource: Res<MenuResource>,
     lobby_root: Single<Entity, With<MatchLobbyRoot>>,
     added_player: Query<
-        (&Shared<PlayerName>, &Shared<PlayerId>),
-        (Added<Shared<PlayerName>>, Without<Shared<PlayerPrivateId>>),
+        (&Shared<PlayerName>, &Shared<PlayerId>, Entity),
+        (
+            Without<MatchLobbyPlayerMarker>,
+            Without<Shared<PlayerPrivateId>>,
+        ),
     >,
 ) {
     let lobby_root = lobby_root.into_inner();
     let font = &menu_resource.font;
 
-    for (added_player_name, added_player_id) in added_player {
+    for (added_player_name, added_player_id, added_player_entity) in added_player {
         info!("ADDED OTHER PLAYER!");
+
+        commands
+            .entity(added_player_entity)
+            .insert(MatchLobbyPlayerMarker);
 
         commands.entity(lobby_root).with_child((
             Text::new(added_player_name.0.clone()),
