@@ -45,7 +45,7 @@ pub fn spawn_server_selection(mut commands: Commands, menu_resource: Res<MenuRes
                     align_items: AlignItems::Center,
                     ..default()
                 },
-                BorderColor(Color::BLACK),
+                BorderColor::all(Color::BLACK),
                 BorderRadius::MAX,
                 BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
                 children![(
@@ -70,7 +70,7 @@ pub fn spawn_server_selection(mut commands: Commands, menu_resource: Res<MenuRes
                     align_items: AlignItems::Center,
                     ..default()
                 },
-                BorderColor(Color::BLACK),
+                BorderColor::all(Color::BLACK),
                 BorderRadius::MAX,
                 BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
                 children![(
@@ -95,7 +95,7 @@ pub fn spawn_server_selection(mut commands: Commands, menu_resource: Res<MenuRes
                     align_items: AlignItems::Center,
                     ..default()
                 },
-                BorderColor(Color::BLACK),
+                BorderColor::all(Color::BLACK),
                 BorderRadius::MAX,
                 BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
                 children![(
@@ -117,7 +117,7 @@ pub fn spawn_server_selection(mut commands: Commands, menu_resource: Res<MenuRes
                     padding: UiRect::all(Val::Px(5.0)),
                     ..default()
                 },
-                BorderColor(Color::BLACK),
+                BorderColor::all(Color::BLACK),
                 BorderRadius::new(Val::Px(5.), Val::Px(5.), Val::Px(5.), Val::Px(5.)),
                 BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
                 children![(

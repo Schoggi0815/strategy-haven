@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::system::NonSendMarker, prelude::*};
 use bevy_hookup_core::{
     hook_session::SessionMessenger, hookup_component_plugin::HookupComponentPlugin,
     hookup_sendable_plugin::HookupSendablePlugin, owner_component::Owner,
@@ -78,7 +78,7 @@ fn start_host(
     mut client_state: ResMut<NextState<ClientState>>,
     mut server_state: ResMut<NextState<ServerState>>,
     mut commands: Commands,
-    _marker: Option<NonSend<NonSendMarker>>,
+    _marker: NonSendMarker,
 ) {
     client_state.set(ClientState::Connected);
     server_state.set(ServerState::On);
@@ -91,7 +91,7 @@ fn start_join(
     mut client_state: ResMut<NextState<ClientState>>,
     connection_details: Res<ConnectionDetails>,
     mut commands: Commands,
-    _marker: Option<NonSend<NonSendMarker>>,
+    _marker: NonSendMarker,
 ) {
     client_state.set(ClientState::Connecting);
 

@@ -28,11 +28,11 @@ impl Plugin for ServerPlugin {
                 (add_player, rename_player).run_if(in_state(ServerState::On)),
             )
             .add_observer(
-                |trigger: Trigger<OnRemove, Session<Sendables>>,
+                |trigger: On<Remove, Session<Sendables>>,
                  sessions: Query<&Session<Sendables>>,
                  session_components: Query<(Entity, &SessionComponent)>,
                  mut commands: Commands| {
-                    let Ok(removed_session) = sessions.get(trigger.target()) else {
+                    let Ok(removed_session) = sessions.get(trigger.entity) else {
                         warn!("REMOVED SESSION NOT FOUND!");
 
                         return;

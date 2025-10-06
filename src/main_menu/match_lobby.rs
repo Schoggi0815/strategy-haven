@@ -44,12 +44,12 @@ pub fn spawn_match_lobby_ui(mut commands: Commands, menu_resource: Res<MenuResou
 }
 
 pub fn remove_player_names(
-    trigger: Trigger<OnRemove, Shared<PlayerId>>,
+    trigger: On<Remove, Shared<PlayerId>>,
     player_ids: Query<&Shared<PlayerId>>,
     match_ui_players: Query<(Entity, &MatchUiPlayer)>,
     mut commands: Commands,
 ) {
-    let Ok(player_id) = player_ids.get(trigger.target()) else {
+    let Ok(player_id) = player_ids.get(trigger.entity) else {
         warn!("Removed Player ID not found!");
         return;
     };
